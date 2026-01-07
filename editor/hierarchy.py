@@ -76,13 +76,55 @@ class HierarchyPanel(QWidget):
         if not item:
             return
         
-        from PySide6.QtWidgets import QMenu
+        from PySide6.QtWidgets import QMenu, QInputDialog, QMessageBox
+        
+        # Imports locally to avoid circular dep if needed, or top-level is fine
+        from editor.undo_redo import CreateObjectCommand, DeleteObjectCommand, RenameObjectCommand
+
         menu = QMenu(self)
+        
+        rename_action = menu.addAction("Rename")
+        rename_action.triggered.connect(lambda: self.rename_object(item))
+        
+        delete_action = menu.addAction("Delete")
+        delete_action.triggered.connect(lambda: self.delete_object(item))
+        
+        menu.addSeparator()
         
         save_prefab_action = menu.addAction("Save as Prefab")
         save_prefab_action.triggered.connect(lambda: self.save_prefab(item))
         
         menu.exec(self.tree.viewport().mapToGlobal(position))
+
+    def rename_object(self, item):
+        obj_id = item.data(0, Qt.UserRole)
+        obj = self.state.get_object_by_id(obj_id)
+        if not obj: return
+        
+        from PySide6.QtWidgets import QInputDialog
+        new_name, ok = QInputDialog.getText(self, "Rename Object", "New Name:", text=obj.get("name", ""))
+        if ok and new_name:
+            cmd = RenameObjectCommand(obj, new_name)
+            self.state.undo_stack.push(cmd)
+            cmd.redo()
+            self.window().refresh_ui()
+
+    def delete_object(self, item):
+        obj_id = item.data(0, Qt.UserRole)
+        scene = self.state.current_scene
+        
+        # Find index
+        index = -1
+        for i, o in enumerate(scene.objects):
+            if o.get("id") == obj_id:
+                index = i
+                break
+        
+        if index != -1:
+            cmd = DeleteObjectCommand(scene, index)
+            self.state.undo_stack.push(cmd)
+            cmd.redo()
+            self.window().refresh_ui()
 
     def save_prefab(self, item):
         obj_id = item.data(0, Qt.UserRole)
@@ -126,7 +168,6 @@ class HierarchyPanel(QWidget):
         
         # Try to spawn at canvas center
         from editor.canvas import SceneCanvas
-        # Find canvas widget through parent
         main_window = self.window()
         if main_window:
             canvas = main_window.findChild(SceneCanvas)
@@ -134,6 +175,26 @@ class HierarchyPanel(QWidget):
                 cx, cy = canvas.get_canvas_center()
                 new_obj.components["Transform"]["position"] = [cx, cy]
         
-        scene.add_object(new_obj)
-        self.refresh()
+        # Use Undo Command
+        from editor.undo_redo import CreateObjectCommand
+        from dataclasses import asdict
+        # GameObject.create returns a class instance, but scene.objects stores dicts?
+        # Let's check scene_schema.py. It seems it uses dicts in the list based on validation errors before.
+        # But wait, Scene.objects is List[GameObject] or List[Dict]?
+        # Checking schema... validation usually expects dicts if typed as Dict.
+        # The `scene_loader` converts to dicts.
+        # Let's assume we need to convert to dict for `scene.objects` if that's what it holds.
+        # Checking `EditorState.load_scene`: `self.current_scene = scene` (instance of Scene).
+        # `Scene` defines `objects: List[dict] = field(default_factory=list)`.
+        # So yes, we should append a dict.
+        
+        obj_dict = asdict(new_obj)
+        cmd = CreateObjectCommand(scene, obj_dict)
+        self.state.undo_stack.push(cmd)
+        cmd.redo()
+        
+        self.window().refresh_ui()
+        # Select the new object
+        # Since refresh rebuilds tree, we need to find it again?
+        # We can select by ID
         self.state.select_object(new_obj.id)

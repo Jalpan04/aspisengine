@@ -92,6 +92,16 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction("Exit").triggered.connect(self.close)
 
+        # Edit Menu
+        edit_menu = menu_bar.addMenu("Edit")
+        undo_action = edit_menu.addAction("Undo")
+        undo_action.setShortcut("Ctrl+Z")
+        undo_action.triggered.connect(lambda: [self.state.undo_stack.undo(), self.refresh_ui()]) # Refresh UI?
+        
+        redo_action = edit_menu.addAction("Redo")
+        redo_action.setShortcut("Ctrl+Y")
+        redo_action.triggered.connect(lambda: [self.state.undo_stack.redo(), self.refresh_ui()])
+
         # View Menu
         view_menu = menu_bar.addMenu("View")
         view_menu.addAction(self.dock_hierarchy.toggleViewAction())
@@ -163,9 +173,21 @@ class MainWindow(QMainWindow):
                 subprocess.Popen(cmd, cwd=self.state.project_root)
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to launch runtime:\n{e}")
-        else:
             QMessageBox.warning(self, "Warning", "Please save the scene before playing.")
             self.save_scene()
+
+    def refresh_ui(self):
+        """Force a UI refresh after undo/redo."""
+        # Hierarchy needs to rebuild tree
+        dock_widget = self.dock_hierarchy.widget()
+        if hasattr(dock_widget, "refresh_tree"):
+            dock_widget.refresh_tree()
+        
+        # Canvas needs repaint
+        self.canvas.update()
+        
+        # Inspector needs refresh
+        self.state.select_object(self.state.selected_object_id) # Re-trigger selection logic
 
     def apply_theme(self):
         # Sharp dark theme - no rounded corners, space efficient

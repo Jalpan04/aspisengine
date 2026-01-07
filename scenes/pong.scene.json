@@ -126,6 +126,7 @@
           "mass": 1.0,
           "drag": 0.0,
           "use_gravity": false,
+          "restitution": 1.0,
           "velocity": [
             200.0,
             150.0
@@ -192,6 +193,29 @@
           "is_trigger": false
         },
         "RigidBody": null
+      }
+    },
+    {
+      "id": "main_camera",
+      "name": "Main Camera",
+      "components": {
+        "Transform": {
+          "position": [
+            400.0,
+            300.0
+          ],
+          "rotation": 0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "Camera": {
+          "width": 800.0,
+          "height": 600.0,
+          "zoom": 1.0,
+          "is_main": true
+        }
       }
     }
   ],
