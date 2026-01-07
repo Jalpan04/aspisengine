@@ -1,11 +1,49 @@
 from shared.component_defs import COMPONENT_RIGIDBODY, COMPONENT_BOX_COLLIDER
 import pygame
+import math
+
+class SpatialHash:
+    def __init__(self, cell_size=100):
+        self.cell_size = cell_size
+        self.cells = {}
+
+    def _get_cell_coords(self, x, y):
+        return int(x / self.cell_size), int(y / self.cell_size)
+
+    def _get_cells_for_rect(self, rect):
+        start_x, start_y = self._get_cell_coords(rect.left, rect.top)
+        end_x, end_y = self._get_cell_coords(rect.right, rect.bottom)
+
+        cells = []
+        for x in range(start_x, end_x + 1):
+            for y in range(start_y, end_y + 1):
+                cells.append((x, y))
+        return cells
+
+    def insert(self, item, rect):
+        for cell_coord in self._get_cells_for_rect(rect):
+            if cell_coord not in self.cells:
+                self.cells[cell_coord] = []
+            self.cells[cell_coord].append(item)
+
+    def get_nearby(self, rect):
+        nearby = set()
+        for cell_coord in self._get_cells_for_rect(rect):
+            if cell_coord in self.cells:
+                for item in self.cells[cell_coord]:
+                    nearby.add(item)
+        return nearby
+
+    def clear(self):
+        self.cells.clear()
+
 
 class PhysicsSystem:
     GRAVITY = 980.0  # Pixels per second squared
 
     def __init__(self):
-        self.colliders = [] # List of (id, rect, is_trigger, game_object)
+        self.colliders = [] # List of wrapped collider dicts
+        self.spatial_hash = SpatialHash(cell_size=128) # Tuned for typical object size
 
     def update(self, dt, objects):
         # 1. Integration Step (Apply Gravity & Velocity)
@@ -37,9 +75,10 @@ class PhysicsSystem:
 
         # 2. Collision Detection
         self.colliders.clear()
+        self.spatial_hash.clear()
         events = [] # List of (obj_a, obj_b)
         
-        # Collect all colliders
+        # Collect all colliders and populate Spatial Hash
         for obj in objects:
             col_data = obj.components.get(COMPONENT_BOX_COLLIDER)
             if not col_data:
@@ -56,17 +95,44 @@ class PhysicsSystem:
                 size[0], size[1]
             )
             
-            self.colliders.append({
+            # Store index instead of object to avoid hashing issues if dict
+            # We wrap it in a tuple or object that is hashable for the set, or just use ID
+            # Let's use ID or index. Since objects is a list, we can use index if stable, but ID is safer.
+
+            collider_wrapper = {
+                "id": obj.id,
                 "obj": obj,
                 "rect": rect,
                 "is_trigger": col_data.get("is_trigger", False),
                 "rb": obj.components.get(COMPONENT_RIGIDBODY)
-            })
+            }
 
-        # Check pairs
-        for i in range(len(self.colliders)):
-            c1 = self.colliders[i]
-            for j in range(i + 1, len(self.colliders)):
+            # We need a way to store this wrapper in the set.
+            # We can use the object ID as a key in a separate dict if needed,
+            # but here we can just append to self.colliders and use index or ID.
+            # Let's make the wrapper hashable by id
+
+            self.colliders.append(collider_wrapper)
+
+            # Use index for spatial hash to keep it simple and hashable (int)
+            idx = len(self.colliders) - 1
+            self.spatial_hash.insert(idx, rect)
+
+        # Check collisions using Spatial Hash
+        checked_pairs = set()
+
+        for i, c1 in enumerate(self.colliders):
+            potential_collisions = self.spatial_hash.get_nearby(c1["rect"])
+
+            for j in potential_collisions:
+                if i >= j: # Avoid duplicates and self-check
+                    continue
+
+                pair_id = (i, j)
+                if pair_id in checked_pairs:
+                    continue
+                checked_pairs.add(pair_id)
+
                 c2 = self.colliders[j]
                 
                 if c1["rect"].colliderect(c2["rect"]):
