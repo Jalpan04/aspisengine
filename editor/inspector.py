@@ -86,18 +86,157 @@ class Vec2Field(QWidget):
         self.y_field.set_value(y)
 
 
-class InspectorPanel(QWidget):
-    def __init__(self):
+class ColorField(QPushButton):
+    """Button that shows color and opens picker."""
+    value_changed = Signal(list) # [r, g, b, a]
+
+    def __init__(self, color_tuple=(255, 255, 255, 255)):
         super().__init__()
-        self.setMinimumWidth(220)
+        self.setFixedWidth(60)
+        self.setFixedHeight(18)
+        self.color = color_tuple
+        self._update_style()
+        self.clicked.connect(self._pick_color)
+
+    def _update_style(self):
+        r, g, b, a = self.color
+        self.setStyleSheet(f"background-color: rgba({r},{g},{b},{a/255.0:.2f}); border: 1px solid #555;")
+
+    def _pick_color(self):
+        from PySide6.QtWidgets import QColorDialog
+        from PySide6.QtGui import QColor
+        r, g, b, a = self.color
+        cur = QColor(r, g, b, a)
         
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        c = QColorDialog.getColor(cur, self, "Pick Tint", QColorDialog.ShowAlphaChannel)
+        if c.isValid():
+            self.color = (c.red(), c.green(), c.blue(), c.alpha())
+            self._update_style()
+            self.value_changed.emit(list(self.color))
+
+    def set_value(self, c):
+        self.color = tuple(c)
+        self._update_style()
+
+
+class InspectorPanel(QWidget):
+    # ... existing init ...
+
+    # ... existing add_transform ...
+
+    def add_sprite_renderer_editor(self, data, obj):
+        header = QLabel("SpriteRenderer")
+        header.setStyleSheet("font-weight: bold; color: #777777; padding: 6px 4px 2px 4px; border-top: 1px solid #333333;")
+        self.content_layout.addWidget(header)
+
+        form = QFormLayout()
+        form.setContentsMargins(8, 4, 4, 4)
+        form.setSpacing(2)
+        form.setLabelAlignment(Qt.AlignRight)
+
+        # Path Row
+        path_layout = QHBoxLayout()
+        path_edit = QLineEdit(data.get("sprite_path", ""))
+        path_edit.setReadOnly(True)
+        path_edit.setStyleSheet("color: #888; background: #222; border: 1px solid #333;")
         
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
+        browse_btn = QPushButton("...")
+        browse_btn.setFixedWidth(24)
+        browse_btn.clicked.connect(lambda: self.pick_sprite(obj))
+
+        path_layout.addWidget(path_edit)
+        path_layout.addWidget(browse_btn)
+        
+        form.addRow(QLabel("Path:"), path_layout)
+
+        # Layer
+        layer = data.get("layer", 0)
+        layer_field = FloatField(layer) # Reuse float field for int for now, or make IntField
+        layer_field.value_changed.connect(lambda v: self.update_component(obj, "SpriteRenderer", "layer", int(v)))
+        form.addRow(QLabel("Layer:"), layer_field)
+
+        # Visible
+        visible = data.get("visible", True)
+        vis_check = QCheckBox()
+        vis_check.setChecked(visible)
+        vis_check.stateChanged.connect(lambda s: self.update_component(obj, "SpriteRenderer", "visible", s == 2))
+        form.addRow(QLabel("Visible:"), vis_check)
+
+        # Tint
+        tint = data.get("tint", [255, 255, 255, 255])
+        col_field = ColorField(tuple(tint))
+        col_field.value_changed.connect(lambda c: self.update_component(obj, "SpriteRenderer", "tint", c))
+        form.addRow(QLabel("Tint:"), col_field)
+
+        form_widget = QWidget()
+        form_widget.setLayout(form)
+        self.content_layout.addWidget(form_widget)
+    
+    def add_box_collider_editor(self, data, obj):
+        if data is None: data = {}
+        header = QLabel("BoxCollider")
+        header.setStyleSheet("font-weight: bold; color: #777777; padding: 6px 4px 2px 4px; border-top: 1px solid #333333;")
+        self.content_layout.addWidget(header)
+
+        form = QFormLayout()
+        form.setContentsMargins(8, 4, 4, 4)
+        form.setSpacing(2)
+        form.setLabelAlignment(Qt.AlignRight)
+
+        # Size
+        size = data.get("size", [50.0, 50.0])
+        size_field = Vec2Field(size[0], size[1], labels=("W", "H"))
+        size_field.value_changed.connect(lambda w, h: self.update_component(obj, "BoxCollider", "size", [w, h]))
+        
+        size_label = QLabel("Size:")
+        size_label.setStyleSheet("color: #666666; font-size: 10px;")
+        form.addRow(size_label, size_field)
+
+        # Sync Button
+        sync_btn = QPushButton("Sync Valid Size")
+        sync_btn.setToolTip("Sets collider size to match the sprite's current world size")
+        sync_btn.clicked.connect(lambda: self.sync_collider_size(obj))
+        form.addRow(QLabel(""), sync_btn)
+
+        # Offset
+        offset = data.get("offset", [0.0, 0.0])
+        
+        # ... rest of offset ... 
+
+    def sync_collider_size(self, obj):
+        # Calculate size from sprite
+        comps = obj.get("components", {})
+        spr = comps.get("SpriteRenderer")
+        head_transform = comps.get("Transform")
+        
+        if not spr or not spr.get("sprite_path"):
+            return
+            
+        path = os.path.join(EditorState.instance().project_root, spr["sprite_path"])
+        if not os.path.exists(path):
+            return
+            
+        from PySide6.QtGui import QPixmap
+        pix = QPixmap(path)
+        if pix.isNull():
+            return
+            
+        w, h = pix.width(), pix.height()
+        
+        # Apply Scale
+        sx, sy = head_transform.get("scale", [1.0, 1.0])
+        final_w = w * abs(sx)
+        final_h = h * abs(sy)
+        
+        # Update Collider
+        self.update_component(obj, "BoxCollider", "size", [final_w, final_h])
+        # Refresh UI happens automatically via update_component logic? 
+        # Wait, update_component rebuilds inspector? No. 
+        # But modify component triggers re-build usually if selection changes?
+        # Actually inspector 'update_component' just sets data. 
+        # I should probably triggering a rebuild or manually updating the field.
+        # For now, forcing a rebuild is easiest.
+        self.build_inspector(obj)
         
         self.container = QWidget()
         self.content_layout = QVBoxLayout(self.container)
@@ -460,6 +599,8 @@ class InspectorPanel(QWidget):
             available.append("RigidBody")
         if "Script" not in components:
             available.append("Script")
+        if "Camera" not in components:
+            available.append("Camera")
         
         if not available:
             return
@@ -476,6 +617,41 @@ class InspectorPanel(QWidget):
         btn_widget = QWidget()
         btn_widget.setLayout(btn_layout)
         self.content_layout.addWidget(btn_widget)
+
+    def add_camera_editor(self, data, obj):
+        if data is None: data = {}
+        header = QLabel("Camera")
+        header.setStyleSheet("font-weight: bold; color: #777777; padding: 6px 4px 2px 4px; border-top: 1px solid #333333;")
+        self.content_layout.addWidget(header)
+
+        form = QFormLayout()
+        form.setContentsMargins(8, 4, 4, 4)
+        form.setSpacing(2)
+        form.setLabelAlignment(Qt.AlignRight)
+        
+        # Size
+        width = data.get("width", 800.0)
+        height = data.get("height", 600.0)
+        size_field = Vec2Field(width, height, labels=("W", "H"))
+        size_field.value_changed.connect(lambda w, h: [self.update_component(obj, "Camera", "width", w), self.update_component(obj, "Camera", "height", h)])
+        form.addRow(QLabel("Size:"), size_field)
+
+        # Zoom
+        zoom = data.get("zoom", 1.0)
+        zoom_field = FloatField(zoom)
+        zoom_field.value_changed.connect(lambda v: self.update_component(obj, "Camera", "zoom", v))
+        form.addRow(QLabel("Zoom:"), zoom_field)
+        
+        # Is Main
+        is_main = data.get("is_main", True)
+        main_check = QCheckBox()
+        main_check.setChecked(is_main)
+        main_check.stateChanged.connect(lambda s: self.update_component(obj, "Camera", "is_main", s == 2))
+        form.addRow(QLabel("Main Camera:"), main_check)
+
+        form_widget = QWidget()
+        form_widget.setLayout(form)
+        self.content_layout.addWidget(form_widget)
 
     def add_rigidbody_editor(self, data, obj):
         if data is None: data = {}
@@ -505,6 +681,15 @@ class InspectorPanel(QWidget):
         drag_label = QLabel("Drag:")
         drag_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(drag_label, drag_field)
+
+        # Restitution
+        restitution = data.get("restitution", 0.5)
+        res_field = FloatField(restitution)
+        res_field.value_changed.connect(lambda v: self.update_component(obj, "RigidBody", "restitution", v))
+        
+        res_label = QLabel("Bounciness:")
+        res_label.setStyleSheet("color: #666666; font-size: 10px;")
+        form.addRow(res_label, res_field)
 
         # Use Gravity
         use_gravity = data.get("use_gravity", True)
@@ -578,10 +763,11 @@ class InspectorPanel(QWidget):
 
     def add_component(self, obj, comp_name):
         defaults = {
-            "SpriteRenderer": {"sprite_path": "", "layer": 0, "visible": True},
+            "SpriteRenderer": {"sprite_path": "", "layer": 0, "visible": True, "tint": [255, 255, 255, 255]},
             "BoxCollider": {"size": [50.0, 50.0], "offset": [0.0, 0.0], "is_trigger": False},
-            "RigidBody": {"mass": 1.0, "drag": 0.0, "use_gravity": True, "velocity": [0.0, 0.0]},
-            "Script": {"script_path": ""}
+            "RigidBody": {"mass": 1.0, "drag": 0.0, "use_gravity": True, "restitution": 0.5, "velocity": [0.0, 0.0]},
+            "Script": {"script_path": ""},
+            "Camera": {"width": 800.0, "height": 600.0, "zoom": 1.0, "is_main": True}
         }
         if comp_name in defaults:
             obj["components"][comp_name] = defaults[comp_name]

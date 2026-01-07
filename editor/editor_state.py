@@ -8,6 +8,8 @@ sys.path.append(os.getcwd())
 
 from shared.scene_schema import Scene, GameObject
 
+from .undo_redo import UndoStack
+
 class EditorState(QObject):
     # Signals
     scene_loaded = Signal()
@@ -17,6 +19,7 @@ class EditorState(QObject):
 
     def __init__(self):
         super().__init__()
+        self.undo_stack = UndoStack()
         self.current_scene: Optional[Scene] = None
         self.selected_object_id: Optional[str] = None
         self.current_scene_path: Optional[str] = None

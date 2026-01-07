@@ -44,6 +44,7 @@ class SpriteRenderer(BaseModel):
     sprite_path: str = ""
     layer: int = 0
     visible: bool = True
+    tint: Tuple[int, int, int, int] = (255, 255, 255, 255)
 
 class BoxCollider(BaseModel):
     size: Tuple[float, float] = (50.0, 50.0)
@@ -54,10 +55,18 @@ class RigidBody(BaseModel):
     mass: float = 1.0
     drag: float = 0.0
     use_gravity: bool = True
+    restitution: float = 0.5
     velocity: Tuple[float, float] = (0.0, 0.0) # Runtime only
 
 class Script(BaseModel):
     script_path: str = ""
+
+@dataclass
+class Camera:
+    width: float = 800.0
+    height: float = 600.0
+    zoom: float = 1.0
+    is_main: bool = True
 
 # Map component names to classes for easy lookup
 COMPONENT_MAP = {
@@ -66,4 +75,5 @@ COMPONENT_MAP = {
     COMPONENT_BOX_COLLIDER: BoxCollider,
     COMPONENT_RIGIDBODY: RigidBody,
     COMPONENT_SCRIPT: Script,
+    "Camera": Camera
 }

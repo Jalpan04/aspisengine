@@ -42,11 +42,19 @@ class PhysicsSystem:
     GRAVITY = 980.0  # Pixels per second squared
 
     def __init__(self):
-        self.colliders = [] # List of wrapped collider dicts
-        self.spatial_hash = SpatialHash(cell_size=128) # Tuned for typical object size
+        self.colliders = [] # List of (id, rect, is_trigger, game_object)
+        self.debug_contacts = [] # List of (center_point, normal_vector)
 
     def update(self, dt, objects):
         # 1. Integration Step (Apply Gravity & Velocity)
+        # ... logic ...
+        
+        # 2. Collision Detection
+        self.colliders.clear()
+        self.debug_contacts.clear()
+        events = [] # List of (obj_a, obj_b)
+        
+        # Collect all colliders
         for obj in objects:
             rb_data = obj.components.get(COMPONENT_RIGIDBODY)
             if not rb_data:
@@ -180,6 +188,26 @@ class PhysicsSystem:
             else:
                 normal = [0, 1]
                 
+        if inter.width < inter.height:
+            # Push horizontally
+            overlap = inter.width
+            if r1.centerx < r2.centerx:
+                normal = [-1, 0] # r1 is left of r2
+            else:
+                normal = [1, 0]
+        else:
+            # Push vertically
+            overlap = inter.height
+            if r1.centery < r2.centery:
+                normal = [0, -1] # r1 is above r2
+            else:
+                normal = [0, 1]
+        
+        # Determine center point of impact (approximate)
+        contact_x = inter.centerx
+        contact_y = inter.centery
+        self.debug_contacts.append(((contact_x, contact_y), normal))
+                
         # Distribute correction
         # If one is static (no RB), move the other 100%
         # If both dynamic, move each 50%
@@ -206,10 +234,18 @@ class PhysicsSystem:
             vel = rb.get("velocity", [0,0])
             
             # Simple bounce could be here, but for now just cancel (inelastic)
-            # Zero out velocity against the wall
+            # Bounce
+            restitution = rb.get("restitution", 0.5)
+
             if normal[0] != 0: 
-                vel[0] = 0
+                # Reflect X
+                if (normal[0] > 0 and vel[0] < 0) or (normal[0] < 0 and vel[0] > 0):
+                    # Moving towards wall, so reflect
+                    vel[0] = -vel[0] * restitution
+            
             if normal[1] != 0:
-                vel[1] = 0
+                # Reflect Y
+                if (normal[1] > 0 and vel[1] < 0) or (normal[1] < 0 and vel[1] > 0):
+                    vel[1] = -vel[1] * restitution
                 
             rb["velocity"] = vel
