@@ -1,10 +1,11 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QTreeWidget, QTreeWidgetItem, 
-    QPushButton, QHBoxLayout
+    QPushButton, QHBoxLayout, QInputDialog, QMessageBox, QMenu
 )
 from PySide6.QtCore import Qt
 from editor.editor_state import EditorState
 from shared.scene_schema import GameObject
+from editor.undo_redo import CreateObjectCommand, DeleteObjectCommand, RenameObjectCommand
 from dataclasses import asdict
 
 class HierarchyPanel(QWidget):
@@ -23,7 +24,7 @@ class HierarchyPanel(QWidget):
         
         add_btn = QPushButton("+ Add")
         add_btn.setFixedHeight(20)
-        add_btn.clicked.connect(self.add_new_object)
+        add_btn.clicked.connect(self.show_add_menu_button)
         toolbar.addWidget(add_btn)
         toolbar.addStretch()
         
@@ -63,6 +64,9 @@ class HierarchyPanel(QWidget):
             
             item.setData(0, Qt.UserRole, obj.get("id"))
     
+    def refresh_tree(self):
+        self.refresh()
+    
     def on_selection_changed(self, current, previous):
         if current:
             obj_id = current.data(0, Qt.UserRole)
@@ -73,36 +77,47 @@ class HierarchyPanel(QWidget):
 
     def show_context_menu(self, position):
         item = self.tree.itemAt(position)
-        if not item:
-            return
         
-        from PySide6.QtWidgets import QMenu, QInputDialog, QMessageBox
-        
-        # Imports locally to avoid circular dep if needed, or top-level is fine
-        from editor.undo_redo import CreateObjectCommand, DeleteObjectCommand, RenameObjectCommand
-
         menu = QMenu(self)
         
-        rename_action = menu.addAction("Rename")
-        rename_action.triggered.connect(lambda: self.rename_object(item))
-        
-        delete_action = menu.addAction("Delete")
-        delete_action.triggered.connect(lambda: self.delete_object(item))
-        
-        menu.addSeparator()
-        
-        save_prefab_action = menu.addAction("Save as Prefab")
-        save_prefab_action.triggered.connect(lambda: self.save_prefab(item))
+        if item:
+            rename_action = menu.addAction("Rename")
+            rename_action.triggered.connect(lambda: self.rename_object(item))
+            
+            delete_action = menu.addAction("Delete")
+            delete_action.triggered.connect(lambda: self.delete_object(item))
+            
+            menu.addSeparator()
+            
+            save_prefab_action = menu.addAction("Save as Prefab")
+            save_prefab_action.triggered.connect(lambda: self.save_prefab(item))
+        else:
+            add_menu = menu.addMenu("Add Object")
+            self.populate_add_menu(add_menu)
         
         menu.exec(self.tree.viewport().mapToGlobal(position))
+
+    def show_add_menu_button(self):
+        menu = QMenu(self)
+        self.populate_add_menu(menu)
+        menu.exec(self.sender().mapToGlobal(self.sender().rect().bottomLeft()))
+
+    def populate_add_menu(self, menu):
+        menu.addAction("Empty Object", lambda: self.add_new_object("GameObject"))
+        menu.addAction("Camera", lambda: self.add_new_object("Camera", {"Camera": {}}))
+        menu.addAction("Light", lambda: self.add_new_object("Light", {"LightSource": {}}))
+        menu.addAction("Circle", lambda: self.add_new_object("Circle", {"CircleCollider": {}}))
+        menu.addAction("Square", lambda: self.add_new_object("Square", {"SpriteRenderer": {}, "BoxCollider": {}}))
 
     def rename_object(self, item):
         obj_id = item.data(0, Qt.UserRole)
         obj = self.state.get_object_by_id(obj_id)
-        if not obj: return
+        if not obj:
+            return
+            
+        old_name = obj.get("name", "GameObject")
+        new_name, ok = QInputDialog.getText(self, "Rename Object", "New Name:", text=old_name)
         
-        from PySide6.QtWidgets import QInputDialog
-        new_name, ok = QInputDialog.getText(self, "Rename Object", "New Name:", text=obj.get("name", ""))
         if ok and new_name:
             cmd = RenameObjectCommand(obj, new_name)
             self.state.undo_stack.push(cmd)
@@ -159,15 +174,32 @@ class HierarchyPanel(QWidget):
                 print(f"Error saving prefab: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to save prefab:\n{e}")
 
-    def add_new_object(self):
+    def add_new_object(self, name="New Object", components=None):
         scene = self.state.current_scene
         if not scene:
             return
         
-        new_obj = GameObject.create("New Object")
-        
+        new_obj = GameObject.create(name)
+        if components:
+            from shared.component_defs import Camera, LightSource, CircleCollider, SpriteRenderer, BoxCollider, COMPONENT_MAP
+            # Helper to get defaults
+            defaults = {
+                "Camera": {"width": 1280, "height": 720, "zoom": 1.0, "is_main": False},
+                "LightSource": {"color": [255, 255, 255, 255], "intensity": 1.0, "radius": 200.0, "type": "point"},
+                "CircleCollider": {"radius": 25.0, "offset": [0.0, 0.0], "is_trigger": False},
+                "SpriteRenderer": {"sprite_path": "", "layer": 0, "visible": True, "tint": [255, 255, 255, 255]},
+                "BoxCollider": {"size": [50.0, 50.0], "offset": [0.0, 0.0], "is_trigger": False}
+            }
+            
+            for comp_name, comp_data in components.items():
+                # Merge defaults
+                data = defaults.get(comp_name, {}).copy()
+                data.update(comp_data)
+                new_obj.components[comp_name] = data
+
         # Try to spawn at canvas center
         from editor.canvas import SceneCanvas
+        # Find canvas widget through parent
         main_window = self.window()
         if main_window:
             canvas = main_window.findChild(SceneCanvas)
@@ -175,26 +207,15 @@ class HierarchyPanel(QWidget):
                 cx, cy = canvas.get_canvas_center()
                 new_obj.components["Transform"]["position"] = [cx, cy]
         
-        # Use Undo Command
-        from editor.undo_redo import CreateObjectCommand
-        from dataclasses import asdict
-        # GameObject.create returns a class instance, but scene.objects stores dicts?
-        # Let's check scene_schema.py. It seems it uses dicts in the list based on validation errors before.
-        # But wait, Scene.objects is List[GameObject] or List[Dict]?
-        # Checking schema... validation usually expects dicts if typed as Dict.
-        # The `scene_loader` converts to dicts.
-        # Let's assume we need to convert to dict for `scene.objects` if that's what it holds.
-        # Checking `EditorState.load_scene`: `self.current_scene = scene` (instance of Scene).
-        # `Scene` defines `objects: List[dict] = field(default_factory=list)`.
-        # So yes, we should append a dict.
-        
         obj_dict = asdict(new_obj)
         cmd = CreateObjectCommand(scene, obj_dict)
         self.state.undo_stack.push(cmd)
         cmd.redo()
         
-        self.window().refresh_ui()
+        if hasattr(main_window, "refresh_ui"):
+             main_window.refresh_ui()
+        else:
+             self.refresh()
+        
         # Select the new object
-        # Since refresh rebuilds tree, we need to find it again?
-        # We can select by ID
         self.state.select_object(new_obj.id)

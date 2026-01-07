@@ -9,7 +9,8 @@ import os
 
 class FloatField(QLineEdit):
     """Compact float input field."""
-    value_changed = Signal(float)
+    value_edited = Signal(float)      # Live updates (preview)
+    value_committed = Signal(float)   # Final update (undoable)
     
     def __init__(self, value=0.0):
         super().__init__()
@@ -28,23 +29,37 @@ class FloatField(QLineEdit):
             }
         """)
         self.setText(str(value))
-        self.editingFinished.connect(self._emit_value)
+        self.textChanged.connect(self._on_text_changed)
+        self.editingFinished.connect(self._on_editing_finished)
+        self._last_committed_value = value
     
-    def _emit_value(self):
+    def _on_text_changed(self, text):
         try:
-            self.value_changed.emit(float(self.text()))
+            val = float(text)
+            self.value_edited.emit(val)
+        except ValueError:
+            pass
+
+    def _on_editing_finished(self):
+        try:
+            val = float(self.text())
+            if val != self._last_committed_value:
+                self._last_committed_value = val
+                self.value_committed.emit(val)
         except ValueError:
             pass
 
     def set_value(self, v):
         self.blockSignals(True)
         self.setText(f"{v:.2f}")
+        self._last_committed_value = v
         self.blockSignals(False)
 
 
 class Vec2Field(QWidget):
     """X/Y input pair."""
-    value_changed = Signal(float, float)
+    value_edited = Signal(float, float)
+    value_committed = Signal(float, float)
     
     def __init__(self, x=0.0, y=0.0, labels=("X", "Y")):
         super().__init__()
@@ -70,14 +85,26 @@ class Vec2Field(QWidget):
         layout.addWidget(self.y_field)
         layout.addStretch()
         
-        self.x_field.value_changed.connect(lambda v: self._emit())
-        self.y_field.value_changed.connect(lambda v: self._emit())
+        # Forward signals
+        self.x_field.value_edited.connect(lambda v: self._emit_edit())
+        self.y_field.value_edited.connect(lambda v: self._emit_edit())
+        
+        self.x_field.value_committed.connect(lambda v: self._emit_commit())
+        self.y_field.value_committed.connect(lambda v: self._emit_commit())
     
-    def _emit(self):
+    def _emit_edit(self):
         try:
             x = float(self.x_field.text())
             y = float(self.y_field.text())
-            self.value_changed.emit(x, y)
+            self.value_edited.emit(x, y)
+        except ValueError:
+            pass
+
+    def _emit_commit(self):
+        try:
+            x = float(self.x_field.text())
+            y = float(self.y_field.text())
+            self.value_committed.emit(x, y)
         except ValueError:
             pass
 
@@ -108,7 +135,7 @@ class ColorField(QPushButton):
         r, g, b, a = self.color
         cur = QColor(r, g, b, a)
         
-        c = QColorDialog.getColor(cur, self, "Pick Tint", QColorDialog.ShowAlphaChannel)
+        c = QColorDialog.getColor(cur, self, "Pick Tint", QColorDialog.ShowAlphaChannel | QColorDialog.DontUseNativeDialog)
         if c.isValid():
             self.color = (c.red(), c.green(), c.blue(), c.alpha())
             self._update_style()
@@ -119,124 +146,20 @@ class ColorField(QPushButton):
         self._update_style()
 
 
+from editor.undo_redo import ChangeComponentCommand, AddComponentCommand, RemoveComponentCommand
+
 class InspectorPanel(QWidget):
-    # ... existing init ...
-
-    # ... existing add_transform ...
-
-    def add_sprite_renderer_editor(self, data, obj):
-        header = QLabel("SpriteRenderer")
-        header.setStyleSheet("font-weight: bold; color: #777777; padding: 6px 4px 2px 4px; border-top: 1px solid #333333;")
-        self.content_layout.addWidget(header)
-
-        form = QFormLayout()
-        form.setContentsMargins(8, 4, 4, 4)
-        form.setSpacing(2)
-        form.setLabelAlignment(Qt.AlignRight)
-
-        # Path Row
-        path_layout = QHBoxLayout()
-        path_edit = QLineEdit(data.get("sprite_path", ""))
-        path_edit.setReadOnly(True)
-        path_edit.setStyleSheet("color: #888; background: #222; border: 1px solid #333;")
+    def __init__(self):
+        super().__init__()
+        self.setMinimumWidth(220)
         
-        browse_btn = QPushButton("...")
-        browse_btn.setFixedWidth(24)
-        browse_btn.clicked.connect(lambda: self.pick_sprite(obj))
-
-        path_layout.addWidget(path_edit)
-        path_layout.addWidget(browse_btn)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        form.addRow(QLabel("Path:"), path_layout)
-
-        # Layer
-        layer = data.get("layer", 0)
-        layer_field = FloatField(layer) # Reuse float field for int for now, or make IntField
-        layer_field.value_changed.connect(lambda v: self.update_component(obj, "SpriteRenderer", "layer", int(v)))
-        form.addRow(QLabel("Layer:"), layer_field)
-
-        # Visible
-        visible = data.get("visible", True)
-        vis_check = QCheckBox()
-        vis_check.setChecked(visible)
-        vis_check.stateChanged.connect(lambda s: self.update_component(obj, "SpriteRenderer", "visible", s == 2))
-        form.addRow(QLabel("Visible:"), vis_check)
-
-        # Tint
-        tint = data.get("tint", [255, 255, 255, 255])
-        col_field = ColorField(tuple(tint))
-        col_field.value_changed.connect(lambda c: self.update_component(obj, "SpriteRenderer", "tint", c))
-        form.addRow(QLabel("Tint:"), col_field)
-
-        form_widget = QWidget()
-        form_widget.setLayout(form)
-        self.content_layout.addWidget(form_widget)
-    
-    def add_box_collider_editor(self, data, obj):
-        if data is None: data = {}
-        header = QLabel("BoxCollider")
-        header.setStyleSheet("font-weight: bold; color: #777777; padding: 6px 4px 2px 4px; border-top: 1px solid #333333;")
-        self.content_layout.addWidget(header)
-
-        form = QFormLayout()
-        form.setContentsMargins(8, 4, 4, 4)
-        form.setSpacing(2)
-        form.setLabelAlignment(Qt.AlignRight)
-
-        # Size
-        size = data.get("size", [50.0, 50.0])
-        size_field = Vec2Field(size[0], size[1], labels=("W", "H"))
-        size_field.value_changed.connect(lambda w, h: self.update_component(obj, "BoxCollider", "size", [w, h]))
-        
-        size_label = QLabel("Size:")
-        size_label.setStyleSheet("color: #666666; font-size: 10px;")
-        form.addRow(size_label, size_field)
-
-        # Sync Button
-        sync_btn = QPushButton("Sync Valid Size")
-        sync_btn.setToolTip("Sets collider size to match the sprite's current world size")
-        sync_btn.clicked.connect(lambda: self.sync_collider_size(obj))
-        form.addRow(QLabel(""), sync_btn)
-
-        # Offset
-        offset = data.get("offset", [0.0, 0.0])
-        
-        # ... rest of offset ... 
-
-    def sync_collider_size(self, obj):
-        # Calculate size from sprite
-        comps = obj.get("components", {})
-        spr = comps.get("SpriteRenderer")
-        head_transform = comps.get("Transform")
-        
-        if not spr or not spr.get("sprite_path"):
-            return
-            
-        path = os.path.join(EditorState.instance().project_root, spr["sprite_path"])
-        if not os.path.exists(path):
-            return
-            
-        from PySide6.QtGui import QPixmap
-        pix = QPixmap(path)
-        if pix.isNull():
-            return
-            
-        w, h = pix.width(), pix.height()
-        
-        # Apply Scale
-        sx, sy = head_transform.get("scale", [1.0, 1.0])
-        final_w = w * abs(sx)
-        final_h = h * abs(sy)
-        
-        # Update Collider
-        self.update_component(obj, "BoxCollider", "size", [final_w, final_h])
-        # Refresh UI happens automatically via update_component logic? 
-        # Wait, update_component rebuilds inspector? No. 
-        # But modify component triggers re-build usually if selection changes?
-        # Actually inspector 'update_component' just sets data. 
-        # I should probably triggering a rebuild or manually updating the field.
-        # For now, forcing a rebuild is easiest.
-        self.build_inspector(obj)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
         
         self.container = QWidget()
         self.content_layout = QVBoxLayout(self.container)
@@ -278,6 +201,69 @@ class InspectorPanel(QWidget):
         placeholder.setAlignment(Qt.AlignCenter)
         self.content_layout.addWidget(placeholder)
 
+    def create_header(self, text, obj, comp_name):
+        """Creates a header with a remove button (unless it's Transform)."""
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 6, 0, 2)
+        layout.setSpacing(4)
+
+        label = QLabel(text)
+        label.setStyleSheet("font-weight: bold; color: #cccccc; font-size: 11px;")
+        layout.addWidget(label)
+        layout.addStretch()
+
+        if comp_name != "Transform":
+            remove_btn = QPushButton("x")
+            remove_btn.setFixedSize(16, 16)
+            remove_btn.setStyleSheet("""
+                QPushButton { background: transparent; color: #666; border: none; font-weight: bold; }
+                QPushButton:hover { color: #ff4444; }
+            """)
+            remove_btn.clicked.connect(lambda: self.remove_component(obj, comp_name))
+            layout.addWidget(remove_btn)
+
+        # Separator line
+        frame = QFrame()
+        frame.setFrameShape(QFrame.HLine)
+        frame.setFrameShadow(QFrame.Plain)
+        frame.setStyleSheet("background: #333333;")
+        frame.setFixedHeight(1)
+        
+        final_layout = QVBoxLayout()
+        final_layout.setContentsMargins(0,0,0,0)
+        final_layout.setSpacing(0)
+        final_layout.addWidget(container)
+        final_layout.addWidget(frame)
+        
+        w = QWidget()
+        w.setLayout(final_layout)
+        
+        # Right click context menu
+        w.setContextMenuPolicy(Qt.CustomContextMenu)
+        w.customContextMenuRequested.connect(lambda pos: self.show_header_context_menu(pos, w, obj, comp_name))
+        
+        return w
+
+    def show_header_context_menu(self, pos, widget, obj, comp_name):
+        from PySide6.QtWidgets import QMenu
+        menu = QMenu(self)
+        
+        if comp_name != "Transform":
+            delete_action = menu.addAction("Delete Component")
+            delete_action.triggered.connect(lambda: self.remove_component(obj, comp_name))
+        
+        if not menu.isEmpty():
+            menu.exec(widget.mapToGlobal(pos))
+
+    def remove_component(self, obj, comp_name):
+        cmd = RemoveComponentCommand(obj, comp_name)
+        self.state.undo_stack.push(cmd)
+        cmd.redo()
+        # Refresh is handled by MainWindow loop usually, but here we force inspector refresh
+        self.state.select_object(obj.get("id"))
+
+
     def build_inspector(self, obj):
         # Object name
         name_label = QLabel(obj.get("name", "Unnamed"))
@@ -309,9 +295,15 @@ class InspectorPanel(QWidget):
                 self.add_rigidbody_editor(comp_data, obj)
             elif comp_name == "BoxCollider":
                 self.add_box_collider_editor(comp_data, obj)
+            elif comp_name == "CircleCollider":
+                self.add_circle_collider_editor(comp_data, obj)
+            elif comp_name == "Camera":
+                self.add_camera_editor(comp_data, obj)
+            elif comp_name == "LightSource":
+                self.add_light_source_editor(comp_data, obj)
 
             else:
-                self.add_component_section(comp_name, comp_data)
+                self.add_component_section(comp_name, comp_data, obj)
 
         # Add Component button
         self.add_component_button(obj)
@@ -319,16 +311,7 @@ class InspectorPanel(QWidget):
         self.content_layout.addStretch()
 
     def add_transform_editor(self, data, obj):
-        header = QLabel("Transform")
-        header.setStyleSheet("""
-            font-weight: bold;
-            color: #777777;
-            padding: 6px 4px 2px 4px;
-            border-bottom: 1px solid #333333;
-            margin-top: 6px;
-            font-size: 10px;
-        """)
-        self.content_layout.addWidget(header)
+        self.content_layout.addWidget(self.create_header("Transform", obj, "Transform"))
 
         form = QFormLayout()
         form.setContentsMargins(8, 4, 4, 4)
@@ -338,7 +321,8 @@ class InspectorPanel(QWidget):
         # Position
         pos = data.get("position", [0, 0])
         pos_field = Vec2Field(pos[0], pos[1])
-        pos_field.value_changed.connect(lambda x, y: self.update_transform(obj, "position", (x, y)))
+        pos_field.value_edited.connect(lambda x, y: self.preview_transform(obj, "position", (x, y)))
+        pos_field.value_committed.connect(lambda x, y: self.commit_transform(obj, "position", (x, y)))
         
         pos_label = QLabel("Position:")
         pos_label.setStyleSheet("color: #666666; font-size: 10px;")
@@ -347,7 +331,8 @@ class InspectorPanel(QWidget):
         # Rotation
         rot = data.get("rotation", 0)
         rot_field = FloatField(rot)
-        rot_field.value_changed.connect(lambda v: self.update_transform(obj, "rotation", v))
+        rot_field.value_edited.connect(lambda v: self.preview_transform(obj, "rotation", v))
+        rot_field.value_committed.connect(lambda v: self.commit_transform(obj, "rotation", v))
         
         rot_label = QLabel("Rotation:")
         rot_label.setStyleSheet("color: #666666; font-size: 10px;")
@@ -356,7 +341,8 @@ class InspectorPanel(QWidget):
         # Scale
         scale = data.get("scale", [1, 1])
         scale_field = Vec2Field(scale[0], scale[1])
-        scale_field.value_changed.connect(lambda x, y: self.update_transform(obj, "scale", (x, y)))
+        scale_field.value_edited.connect(lambda x, y: self.preview_transform(obj, "scale", (x, y)))
+        scale_field.value_committed.connect(lambda x, y: self.commit_transform(obj, "scale", (x, y)))
         
         scale_label = QLabel("Scale:")
         scale_label.setStyleSheet("color: #666666; font-size: 10px;")
@@ -366,26 +352,16 @@ class InspectorPanel(QWidget):
         form_widget.setLayout(form)
         self.content_layout.addWidget(form_widget)
 
-    def update_transform(self, obj, key, value):
-        if "Transform" in obj.get("components", {}):
-            if isinstance(value, tuple):
-                obj["components"]["Transform"][key] = list(value)
-            else:
-                obj["components"]["Transform"][key] = value
-            # Emit signal for canvas refresh
-            self.state.scene_loaded.emit()
+    def preview_transform(self, obj, key, value):
+        val = list(value) if isinstance(value, tuple) else value
+        self.preview_component(obj, "Transform", key, val)
 
-    def add_component_section(self, name, data):
-        header = QLabel(name)
-        header.setStyleSheet("""
-            font-weight: bold;
-            color: #777777;
-            padding: 6px 4px 2px 4px;
-            border-bottom: 1px solid #333333;
-            margin-top: 6px;
-            font-size: 10px;
-        """)
-        self.content_layout.addWidget(header)
+    def commit_transform(self, obj, key, value):
+        val = list(value) if isinstance(value, tuple) else value
+        self.update_component(obj, "Transform", key, val)
+
+    def add_component_section(self, name, data, obj):
+        self.content_layout.addWidget(self.create_header(name, obj, name))
 
         form = QFormLayout()
         form.setContentsMargins(8, 4, 4, 4)
@@ -408,16 +384,7 @@ class InspectorPanel(QWidget):
         self.content_layout.addWidget(form_widget)
 
     def add_sprite_editor(self, data, obj):
-        header = QLabel("SpriteRenderer")
-        header.setStyleSheet("""
-            font-weight: bold;
-            color: #777777;
-            padding: 6px 4px 2px 4px;
-            border-bottom: 1px solid #333333;
-            margin-top: 6px;
-            font-size: 10px;
-        """)
-        self.content_layout.addWidget(header)
+        self.content_layout.addWidget(self.create_header("SpriteRenderer", obj, "SpriteRenderer"))
 
         form = QFormLayout()
         form.setContentsMargins(8, 4, 4, 4)
@@ -452,7 +419,8 @@ class InspectorPanel(QWidget):
         layer = data.get("layer", 0)
         layer_field = FloatField(layer)
         layer_field.setFixedWidth(40)
-        layer_field.value_changed.connect(lambda v: self.update_sprite(obj, "layer", int(v)))
+        layer_field.value_edited.connect(lambda v: self.preview_component(obj, "SpriteRenderer", "layer", int(v)))
+        layer_field.value_committed.connect(lambda v: self.update_component(obj, "SpriteRenderer", "layer", int(v)))
         
         layer_label = QLabel("Layer:")
         layer_label.setStyleSheet("color: #666666; font-size: 10px;")
@@ -467,6 +435,12 @@ class InspectorPanel(QWidget):
         visible_label = QLabel("Visible:")
         visible_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(visible_label, visible_check)
+
+        # Tint
+        tint = data.get("tint", [255, 255, 255, 255])
+        col_field = ColorField(tuple(tint))
+        col_field.value_changed.connect(lambda c: self.update_component(obj, "SpriteRenderer", "tint", c))
+        form.addRow(QLabel("Tint:"), col_field)
 
         form_widget = QWidget()
         form_widget.setLayout(form)
@@ -514,14 +488,7 @@ class InspectorPanel(QWidget):
         self.state.scene_loaded.emit()
 
     def add_script_editor(self, data, obj):
-        header = QLabel("Script")
-        header.setStyleSheet("""
-            font-weight: bold;
-            color: #777777;
-            padding: 6px 4px 2px 4px;
-            border-top: 1px solid #333333;
-        """)
-        self.content_layout.addWidget(header)
+        self.content_layout.addWidget(self.create_header("Script", obj, "Script"))
 
         form = QFormLayout()
         form.setContentsMargins(8, 4, 4, 4)
@@ -595,12 +562,16 @@ class InspectorPanel(QWidget):
             available.append("SpriteRenderer")
         if "BoxCollider" not in components:
             available.append("BoxCollider")
+        if "CircleCollider" not in components:
+            available.append("CircleCollider")
         if "RigidBody" not in components:
             available.append("RigidBody")
         if "Script" not in components:
             available.append("Script")
         if "Camera" not in components:
             available.append("Camera")
+        if "LightSource" not in components:
+            available.append("LightSource")
         
         if not available:
             return
@@ -620,9 +591,7 @@ class InspectorPanel(QWidget):
 
     def add_camera_editor(self, data, obj):
         if data is None: data = {}
-        header = QLabel("Camera")
-        header.setStyleSheet("font-weight: bold; color: #777777; padding: 6px 4px 2px 4px; border-top: 1px solid #333333;")
-        self.content_layout.addWidget(header)
+        self.content_layout.addWidget(self.create_header("Camera", obj, "Camera"))
 
         form = QFormLayout()
         form.setContentsMargins(8, 4, 4, 4)
@@ -633,13 +602,15 @@ class InspectorPanel(QWidget):
         width = data.get("width", 800.0)
         height = data.get("height", 600.0)
         size_field = Vec2Field(width, height, labels=("W", "H"))
-        size_field.value_changed.connect(lambda w, h: [self.update_component(obj, "Camera", "width", w), self.update_component(obj, "Camera", "height", h)])
+        size_field.value_edited.connect(lambda w, h: [self.preview_component(obj, "Camera", "width", w), self.preview_component(obj, "Camera", "height", h)])
+        size_field.value_committed.connect(lambda w, h: [self.update_component(obj, "Camera", "width", w), self.update_component(obj, "Camera", "height", h)])
         form.addRow(QLabel("Size:"), size_field)
 
         # Zoom
         zoom = data.get("zoom", 1.0)
         zoom_field = FloatField(zoom)
-        zoom_field.value_changed.connect(lambda v: self.update_component(obj, "Camera", "zoom", v))
+        zoom_field.value_edited.connect(lambda v: self.preview_component(obj, "Camera", "zoom", v))
+        zoom_field.value_committed.connect(lambda v: self.update_component(obj, "Camera", "zoom", v))
         form.addRow(QLabel("Zoom:"), zoom_field)
         
         # Is Main
@@ -655,9 +626,7 @@ class InspectorPanel(QWidget):
 
     def add_rigidbody_editor(self, data, obj):
         if data is None: data = {}
-        header = QLabel("RigidBody")
-        header.setStyleSheet("font-weight: bold; color: #777777; padding: 6px 4px 2px 4px; border-top: 1px solid #333333;")
-        self.content_layout.addWidget(header)
+        self.content_layout.addWidget(self.create_header("RigidBody", obj, "RigidBody"))
 
         form = QFormLayout()
         form.setContentsMargins(8, 4, 4, 4)
@@ -667,7 +636,8 @@ class InspectorPanel(QWidget):
         # Mass
         mass = data.get("mass", 1.0)
         mass_field = FloatField(mass)
-        mass_field.value_changed.connect(lambda v: self.update_component(obj, "RigidBody", "mass", v))
+        mass_field.value_edited.connect(lambda v: self.preview_component(obj, "RigidBody", "mass", v))
+        mass_field.value_committed.connect(lambda v: self.update_component(obj, "RigidBody", "mass", v))
         
         mass_label = QLabel("Mass:")
         mass_label.setStyleSheet("color: #666666; font-size: 10px;")
@@ -676,20 +646,12 @@ class InspectorPanel(QWidget):
         # Drag
         drag = data.get("drag", 0.0)
         drag_field = FloatField(drag)
-        drag_field.value_changed.connect(lambda v: self.update_component(obj, "RigidBody", "drag", v))
+        drag_field.value_edited.connect(lambda v: self.preview_component(obj, "RigidBody", "drag", v))
+        drag_field.value_committed.connect(lambda v: self.update_component(obj, "RigidBody", "drag", v))
         
         drag_label = QLabel("Drag:")
         drag_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(drag_label, drag_field)
-
-        # Restitution
-        restitution = data.get("restitution", 0.5)
-        res_field = FloatField(restitution)
-        res_field.value_changed.connect(lambda v: self.update_component(obj, "RigidBody", "restitution", v))
-        
-        res_label = QLabel("Bounciness:")
-        res_label.setStyleSheet("color: #666666; font-size: 10px;")
-        form.addRow(res_label, res_field)
 
         # Use Gravity
         use_gravity = data.get("use_gravity", True)
@@ -701,15 +663,20 @@ class InspectorPanel(QWidget):
         gravity_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(gravity_label, gravity_check)
 
+        # Restitution
+        restitution = data.get("restitution", 0.5)
+        rest_field = FloatField(restitution)
+        rest_field.value_edited.connect(lambda v: self.preview_component(obj, "RigidBody", "restitution", v))
+        rest_field.value_committed.connect(lambda v: self.update_component(obj, "RigidBody", "restitution", v))
+        form.addRow(QLabel("Restitution:"), rest_field)
+
         form_widget = QWidget()
         form_widget.setLayout(form)
         self.content_layout.addWidget(form_widget)
 
     def add_box_collider_editor(self, data, obj):
         if data is None: data = {}
-        header = QLabel("BoxCollider")
-        header.setStyleSheet("font-weight: bold; color: #777777; padding: 6px 4px 2px 4px; border-top: 1px solid #333333;")
-        self.content_layout.addWidget(header)
+        self.content_layout.addWidget(self.create_header("BoxCollider", obj, "BoxCollider"))
 
         form = QFormLayout()
         form.setContentsMargins(8, 4, 4, 4)
@@ -719,7 +686,8 @@ class InspectorPanel(QWidget):
         # Size
         size = data.get("size", [50.0, 50.0])
         size_field = Vec2Field(size[0], size[1], labels=("W", "H"))
-        size_field.value_changed.connect(lambda w, h: self.update_component(obj, "BoxCollider", "size", [w, h]))
+        size_field.value_edited.connect(lambda w, h: self.preview_component(obj, "BoxCollider", "size", [w, h]))
+        size_field.value_committed.connect(lambda w, h: self.update_component(obj, "BoxCollider", "size", [w, h]))
         
         size_label = QLabel("Size:")
         size_label.setStyleSheet("color: #666666; font-size: 10px;")
@@ -728,7 +696,8 @@ class InspectorPanel(QWidget):
         # Offset
         offset = data.get("offset", [0.0, 0.0])
         offset_field = Vec2Field(offset[0], offset[1])
-        offset_field.value_changed.connect(lambda x, y: self.update_component(obj, "BoxCollider", "offset", [x, y]))
+        offset_field.value_edited.connect(lambda x, y: self.preview_component(obj, "BoxCollider", "offset", [x, y]))
+        offset_field.value_committed.connect(lambda x, y: self.update_component(obj, "BoxCollider", "offset", [x, y]))
         
         offset_label = QLabel("Offset:")
         offset_label.setStyleSheet("color: #666666; font-size: 10px;")
@@ -744,14 +713,45 @@ class InspectorPanel(QWidget):
         trigger_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(trigger_label, trigger_check)
 
+        # Sync Button
+        if "SpriteRenderer" in obj.get("components", {}):
+            sync_btn = QPushButton("Sync Valid Size")
+            sync_btn.setFixedHeight(20)
+            sync_btn.clicked.connect(lambda: self.sync_collider_size(obj))
+            form.addRow("", sync_btn)
+
         form_widget = QWidget()
         form_widget.setLayout(form)
         self.content_layout.addWidget(form_widget)
 
-    def update_component(self, obj, comp_name, key, value):
+    def sync_collider_size(self, obj):
+        sprite_data = obj["components"].get("SpriteRenderer", {})
+        path = sprite_data.get("sprite_path", "")
+        if not path:
+             return
+        
+        full_path = os.path.join(self.state.project_root, path)
+        if os.path.exists(full_path):
+            from PySide6.QtGui import QImage
+            img = QImage(full_path)
+            if not img.isNull():
+                w, h = img.width(), img.height()
+                self.update_component(obj, "BoxCollider", "size", [float(w), float(h)])
+
+    def preview_component(self, obj, comp_name, key, value):
+        """Updates the component data directly without undo history (for live preview)."""
         if comp_name in obj.get("components", {}):
             obj["components"][comp_name][key] = value
             self.state.scene_loaded.emit()
+
+    def update_component(self, obj, comp_name, key, value):
+        if comp_name in obj.get("components", {}):
+            current = obj["components"][comp_name].get(key)
+            if current != value:
+                cmd = ChangeComponentCommand(obj, comp_name, key, value)
+                self.state.undo_stack.push(cmd)
+                cmd.redo()
+                self.state.scene_loaded.emit()
 
     def show_add_menu(self, obj, available, button):
         from PySide6.QtWidgets import QMenu
@@ -765,10 +765,81 @@ class InspectorPanel(QWidget):
         defaults = {
             "SpriteRenderer": {"sprite_path": "", "layer": 0, "visible": True, "tint": [255, 255, 255, 255]},
             "BoxCollider": {"size": [50.0, 50.0], "offset": [0.0, 0.0], "is_trigger": False},
+            "CircleCollider": {"radius": 25.0, "offset": [0.0, 0.0], "is_trigger": False},
             "RigidBody": {"mass": 1.0, "drag": 0.0, "use_gravity": True, "restitution": 0.5, "velocity": [0.0, 0.0]},
             "Script": {"script_path": ""},
-            "Camera": {"width": 800.0, "height": 600.0, "zoom": 1.0, "is_main": True}
+            "Camera": {"width": 800.0, "height": 600.0, "zoom": 1.0, "is_main": True},
+            "LightSource": {"color": [255, 255, 255, 255], "intensity": 1.0, "radius": 200.0, "type": "point"}
         }
         if comp_name in defaults:
-            obj["components"][comp_name] = defaults[comp_name]
+            cmd = AddComponentCommand(obj, comp_name, defaults[comp_name])
+            self.state.undo_stack.push(cmd)
+            cmd.redo()
             self.state.select_object(obj.get("id"))  # Refresh inspector
+
+    def add_circle_collider_editor(self, data, obj):
+        if data is None: data = {}
+        self.content_layout.addWidget(self.create_header("CircleCollider", obj, "CircleCollider"))
+
+        form = QFormLayout()
+        form.setContentsMargins(8, 4, 4, 4)
+        form.setSpacing(2)
+        form.setLabelAlignment(Qt.AlignRight)
+
+        # Radius
+        radius = data.get("radius", 25.0)
+        radius_field = FloatField(radius)
+        radius_field.value_edited.connect(lambda v: self.preview_component(obj, "CircleCollider", "radius", v))
+        radius_field.value_committed.connect(lambda v: self.update_component(obj, "CircleCollider", "radius", v))
+        form.addRow(QLabel("Radius:"), radius_field)
+
+        # Offset
+        offset = data.get("offset", [0.0, 0.0])
+        offset_field = Vec2Field(offset[0], offset[1])
+        offset_field.value_edited.connect(lambda x, y: self.preview_component(obj, "CircleCollider", "offset", [x, y]))
+        offset_field.value_committed.connect(lambda x, y: self.update_component(obj, "CircleCollider", "offset", [x, y]))
+        form.addRow(QLabel("Offset:"), offset_field)
+
+        # Is Trigger
+        is_trigger = data.get("is_trigger", False)
+        trigger_check = QCheckBox()
+        trigger_check.setChecked(is_trigger)
+        trigger_check.stateChanged.connect(lambda s: self.update_component(obj, "CircleCollider", "is_trigger", s == 2))
+        form.addRow(QLabel("Is Trigger:"), trigger_check)
+
+        form_widget = QWidget()
+        form_widget.setLayout(form)
+        self.content_layout.addWidget(form_widget)
+
+    def add_light_source_editor(self, data, obj):
+        if data is None: data = {}
+        self.content_layout.addWidget(self.create_header("LightSource", obj, "LightSource"))
+
+        form = QFormLayout()
+        form.setContentsMargins(8, 4, 4, 4)
+        form.setSpacing(2)
+        form.setLabelAlignment(Qt.AlignRight)
+
+        # Color
+        color = data.get("color", [255, 255, 255, 255])
+        col_field = ColorField(tuple(color))
+        col_field.value_changed.connect(lambda c: self.update_component(obj, "LightSource", "color", c))
+        form.addRow(QLabel("Color:"), col_field)
+
+        # Intensity
+        intensity = data.get("intensity", 1.0)
+        int_field = FloatField(intensity)
+        int_field.value_edited.connect(lambda v: self.preview_component(obj, "LightSource", "intensity", v))
+        int_field.value_committed.connect(lambda v: self.update_component(obj, "LightSource", "intensity", v))
+        form.addRow(QLabel("Intensity:"), int_field)
+
+        # Radius
+        radius = data.get("radius", 200.0)
+        rad_field = FloatField(radius)
+        rad_field.value_edited.connect(lambda v: self.preview_component(obj, "LightSource", "radius", v))
+        rad_field.value_committed.connect(lambda v: self.update_component(obj, "LightSource", "radius", v))
+        form.addRow(QLabel("Radius:"), rad_field)
+
+        form_widget = QWidget()
+        form_widget.setLayout(form)
+        self.content_layout.addWidget(form_widget)

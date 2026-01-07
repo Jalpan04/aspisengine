@@ -191,38 +191,31 @@ class GameRuntime:
         # 1. Find Main Camera
         camera_obj = None
         camera_comp = None
-        for obj in self.objects:
-            if obj.active:
-                cam = obj.components.get("Camera")
-                if cam and cam.get("is_main", True):
-                    camera_obj = obj
-                    camera_comp = cam
-                    break
+        for go in self.objects:
+            cam = go.components.get("Camera")
+            if cam and cam.get("is_main", True):
+                camera_obj = go
+                camera_comp = cam
+                break
         
         # Default settings if no camera
         screen_w, screen_h = 800, 600
-        cam_x, cam_y = 0.0, 0.0 # Default center of world is center of screen
+        cam_x, cam_y = 0.0, 0.0
         
         if camera_comp:
             screen_w = int(camera_comp.get("width", 800))
             screen_h = int(camera_comp.get("height", 600))
-            # Cam pos
-            cam_pos = camera_obj.position
-            cam_x, cam_y = cam_pos[0], cam_pos[1]
+            cam_x, cam_y = camera_obj.position[0], camera_obj.position[1]
         
         # Resize window if needed
         current_w, current_h = self.screen.get_size()
         if current_w != screen_w or current_h != screen_h:
-            self.screen = pygame.display.set_mode((screen_w, screen_h), pygame.RESIZABLE)
+            self.screen = pygame.display.set_mode((screen_w, screen_h))
             
-        self.screen.fill((20, 20, 20))
-
-        # Calculate Offset (Center camera on screen)
-        # World Point P draws at: P + Offset
-        # We want CamPos to be at ScreenCenter
-        # CamPos + Offset = ScreenCenter
-        # Offset = ScreenCenter - CamPos
+        self.screen.fill((20, 20, 20)) 
         
+        # Calculate Offset (Center camera on screen)
+        # CamPos + Offset = ScreenCenter => Offset = ScreenCenter - CamPos
         offset_x = (screen_w / 2) - cam_x
         offset_y = (screen_h / 2) - cam_y
         
@@ -248,22 +241,16 @@ class GameRuntime:
                     img = self.sprites[path]
                 
                 if img:
-                    # Apply Tint
-                    tint = sprite_data.get("tint", [255, 255, 255, 255])
-                    if tint != [255, 255, 255, 255] and tint != (255, 255, 255, 255):
-                        # Create a copy to tint
-                        img = img.copy()
-                        # Pygame expect RGB or RGBA. 
-                        # BLEND_RGBA_MULT multiplies: New = Old * Tint / 255
-                        img.fill(tint, special_flags=pygame.BLEND_RGBA_MULT)
-
-                    # Debug Image Size
-                    # print(f"Drawing {path}: {img.get_width()}x{img.get_height()}")
-                    
                     # Apply Transform
                     pos = go.position
                     rot = go.rotation
                     scale = go.scale
+                    
+                    # Tint
+                    tint = sprite_data.get("tint", [255, 255, 255, 255])
+                    if tint != [255, 255, 255, 255]:
+                        img = img.copy()
+                        img.fill(tint, special_flags=pygame.BLEND_RGBA_MULT)
                     
                     # Simple handling for negative scales (flipping)
                     if scale[0] < 0: 
@@ -315,25 +302,6 @@ class GameRuntime:
                     size[1]
                 )
                 pygame.draw.rect(self.screen, (0, 255, 0), debug_rect, 1)
-
-                # Draw Velocity (Blue Line)
-                rb = go.components.get("RigidBody")
-                if rb:
-                    vel = rb.get("velocity", [0, 0])
-                    if vel[0] != 0 or vel[1] != 0:
-                        center = (debug_rect.centerx, debug_rect.centery)
-                        end_pos = (center[0] + vel[0] * 0.5, center[1] + vel[1] * 0.5)
-                        pygame.draw.line(self.screen, (0, 0, 255), center, end_pos, 2)
-
-            # 3. Draw Physics Contacts
-            for point, normal in self.physics.debug_contacts:
-                screen_cx = point[0] + cam_offset_x
-                screen_cy = point[1] + cam_offset_y
-                # Draw Point
-                pygame.draw.circle(self.screen, (255, 0, 0), (int(screen_cx), int(screen_cy)), 3)
-                # Draw Normal (Yellow)
-                end_n = (screen_cx + normal[0] * 20, screen_cy + normal[1] * 20)
-                pygame.draw.line(self.screen, (255, 255, 0), (int(screen_cx), int(screen_cy)), (int(end_n[0]), int(end_n[1])), 1)
             
         pygame.display.flip()
 

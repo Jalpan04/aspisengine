@@ -1,60 +1,14 @@
 from shared.component_defs import COMPONENT_RIGIDBODY, COMPONENT_BOX_COLLIDER
 import pygame
-import math
-
-class SpatialHash:
-    def __init__(self, cell_size=100):
-        self.cell_size = cell_size
-        self.cells = {}
-
-    def _get_cell_coords(self, x, y):
-        return int(x / self.cell_size), int(y / self.cell_size)
-
-    def _get_cells_for_rect(self, rect):
-        start_x, start_y = self._get_cell_coords(rect.left, rect.top)
-        end_x, end_y = self._get_cell_coords(rect.right, rect.bottom)
-
-        cells = []
-        for x in range(start_x, end_x + 1):
-            for y in range(start_y, end_y + 1):
-                cells.append((x, y))
-        return cells
-
-    def insert(self, item, rect):
-        for cell_coord in self._get_cells_for_rect(rect):
-            if cell_coord not in self.cells:
-                self.cells[cell_coord] = []
-            self.cells[cell_coord].append(item)
-
-    def get_nearby(self, rect):
-        nearby = set()
-        for cell_coord in self._get_cells_for_rect(rect):
-            if cell_coord in self.cells:
-                for item in self.cells[cell_coord]:
-                    nearby.add(item)
-        return nearby
-
-    def clear(self):
-        self.cells.clear()
-
 
 class PhysicsSystem:
     GRAVITY = 980.0  # Pixels per second squared
 
     def __init__(self):
         self.colliders = [] # List of (id, rect, is_trigger, game_object)
-        self.debug_contacts = [] # List of (center_point, normal_vector)
 
     def update(self, dt, objects):
         # 1. Integration Step (Apply Gravity & Velocity)
-        # ... logic ...
-        
-        # 2. Collision Detection
-        self.colliders.clear()
-        self.debug_contacts.clear()
-        events = [] # List of (obj_a, obj_b)
-        
-        # Collect all colliders
         for obj in objects:
             rb_data = obj.components.get(COMPONENT_RIGIDBODY)
             if not rb_data:
@@ -83,10 +37,9 @@ class PhysicsSystem:
 
         # 2. Collision Detection
         self.colliders.clear()
-        self.spatial_hash.clear()
         events = [] # List of (obj_a, obj_b)
         
-        # Collect all colliders and populate Spatial Hash
+        # Collect all colliders
         for obj in objects:
             col_data = obj.components.get(COMPONENT_BOX_COLLIDER)
             if not col_data:
@@ -103,44 +56,17 @@ class PhysicsSystem:
                 size[0], size[1]
             )
             
-            # Store index instead of object to avoid hashing issues if dict
-            # We wrap it in a tuple or object that is hashable for the set, or just use ID
-            # Let's use ID or index. Since objects is a list, we can use index if stable, but ID is safer.
-
-            collider_wrapper = {
-                "id": obj.id,
+            self.colliders.append({
                 "obj": obj,
                 "rect": rect,
                 "is_trigger": col_data.get("is_trigger", False),
                 "rb": obj.components.get(COMPONENT_RIGIDBODY)
-            }
+            })
 
-            # We need a way to store this wrapper in the set.
-            # We can use the object ID as a key in a separate dict if needed,
-            # but here we can just append to self.colliders and use index or ID.
-            # Let's make the wrapper hashable by id
-
-            self.colliders.append(collider_wrapper)
-
-            # Use index for spatial hash to keep it simple and hashable (int)
-            idx = len(self.colliders) - 1
-            self.spatial_hash.insert(idx, rect)
-
-        # Check collisions using Spatial Hash
-        checked_pairs = set()
-
-        for i, c1 in enumerate(self.colliders):
-            potential_collisions = self.spatial_hash.get_nearby(c1["rect"])
-
-            for j in potential_collisions:
-                if i >= j: # Avoid duplicates and self-check
-                    continue
-
-                pair_id = (i, j)
-                if pair_id in checked_pairs:
-                    continue
-                checked_pairs.add(pair_id)
-
+        # Check pairs
+        for i in range(len(self.colliders)):
+            c1 = self.colliders[i]
+            for j in range(i + 1, len(self.colliders)):
                 c2 = self.colliders[j]
                 
                 if c1["rect"].colliderect(c2["rect"]):
@@ -188,64 +114,43 @@ class PhysicsSystem:
             else:
                 normal = [0, 1]
                 
-        if inter.width < inter.height:
-            # Push horizontally
-            overlap = inter.width
-            if r1.centerx < r2.centerx:
-                normal = [-1, 0] # r1 is left of r2
-            else:
-                normal = [1, 0]
-        else:
-            # Push vertically
-            overlap = inter.height
-            if r1.centery < r2.centery:
-                normal = [0, -1] # r1 is above r2
-            else:
-                normal = [0, 1]
-        
-        # Determine center point of impact (approximate)
-        contact_x = inter.centerx
-        contact_y = inter.centery
-        self.debug_contacts.append(((contact_x, contact_y), normal))
-                
         # Distribute correction
-        # If one is static (no RB), move the other 100%
-        # If both dynamic, move each 50%
+        # Calculate combined restitution (average)
+        restitution_1 = rb1.get("restitution", 0.5) if rb1 else 0.5
+        restitution_2 = rb2.get("restitution", 0.5) if rb2 else 0.5
+        e = (restitution_1 + restitution_2) / 2.0
         
         if rb1 and not rb2:
-            self.apply_resolution(c1, normal, overlap) # Push c1 away (along normal)
+            self.apply_resolution(c1, normal, overlap, e) # Push c1 away (along normal)
         elif rb2 and not rb1:
-            self.apply_resolution(c2, normal, -overlap) # Push c2 away (against normal)
+            self.apply_resolution(c2, normal, -overlap, e) # Push c2 away (against normal)
         else:
             # Both dynamic
-            self.apply_resolution(c1, normal, overlap * 0.5)
-            self.apply_resolution(c2, normal, -overlap * 0.5)
+            self.apply_resolution(c1, normal, overlap * 0.5, e)
+            self.apply_resolution(c2, normal, -overlap * 0.5, e)
 
-    def apply_resolution(self, collider, normal, pixel_depth):
+    def apply_resolution(self, collider, normal, pixel_depth, restitution):
         obj = collider["obj"]
         rb = collider["rb"]
         
         # Move Object
-        obj.position[0] += normal[0] * pixel_depth * 1.01 # 1% slop to prevent sinking
+        obj.position[0] += normal[0] * pixel_depth * 1.01
         obj.position[1] += normal[1] * pixel_depth * 1.01
         
-        # Zero out velocity against the wall
+        # Velocity Response
         if rb:
-            vel = rb.get("velocity", [0,0])
+            vel = rb.get("velocity", [0.0, 0.0])
             
-            # Simple bounce could be here, but for now just cancel (inelastic)
-            # Bounce
-            restitution = rb.get("restitution", 0.5)
-
-            if normal[0] != 0: 
-                # Reflect X
-                if (normal[0] > 0 and vel[0] < 0) or (normal[0] < 0 and vel[0] > 0):
-                    # Moving towards wall, so reflect
-                    vel[0] = -vel[0] * restitution
+            # v_normal = vel . normal
+            vn = vel[0] * normal[0] + vel[1] * normal[1]
             
-            if normal[1] != 0:
-                # Reflect Y
-                if (normal[1] > 0 and vel[1] < 0) or (normal[1] < 0 and vel[1] > 0):
-                    vel[1] = -vel[1] * restitution
+            # Only bounce if moving towards the normal (collision)
+            if vn < 0:
+                # J = -(1 + e) * vn
+                jn = -(1 + restitution) * vn
+                
+                # Apply impulse
+                vel[0] += normal[0] * jn
+                vel[1] += normal[1] * jn
                 
             rb["velocity"] = vel

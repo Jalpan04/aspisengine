@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "name": "Untitled Scene",
+    "version": 1
+  },
+  "objects": [
+    {
+      "id": "32939a61-499f-4755-95c7-afc01619401e",
+      "name": "Main Camera",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "Camera": {
+          "width": 1280,
+          "height": 720,
+          "zoom": 1.0,
+          "is_main": true
+        }
+      }
+    },
+    {
+      "id": "ffc1b3a3-05df-492c-9f40-f57ae0c3eabb",
+      "name": "GameObject",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "layer": 0,
+          "visible": true,
+          "tint": [
+            255,
+            143,
+            52,
+            255
+          ]
+        },
+        "RigidBody": {
+          "mass": 1.0,
+          "drag": 0.0,
+          "use_gravity": true,
+          "restitution": 0.5,
+          "velocity": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    }
+  ],
+  "prefabs": {}
+}

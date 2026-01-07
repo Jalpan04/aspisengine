@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from dataclasses import asdict
 
 class Command(ABC):
     @abstractmethod
@@ -43,51 +44,86 @@ class UndoStack:
     def can_redo(self):
         return len(self._redo_stack) > 0
 
-# Common Commands
-
 class CreateObjectCommand(Command):
     def __init__(self, scene, obj_data, index=None):
         self.scene = scene
         self.obj_data = obj_data
-        self.index = index # Optional insert index
+        self.index = index
         self.created_obj = None
 
     def redo(self):
-        self.created_obj = self.obj_data.copy() # Simplistic, assumes obj_data is dict
+        self.created_obj = self.obj_data.copy()
         if self.index is not None:
             self.scene.objects.insert(self.index, self.created_obj)
         else:
             self.scene.objects.append(self.created_obj)
-        
-        # Trigger UI update logic via signaling? 
-        # For now, we rely on the caller to refresh UI after undo/redo
 
     def undo(self):
         if self.created_obj in self.scene.objects:
             self.scene.objects.remove(self.created_obj)
 
 class DeleteObjectCommand(Command):
-    def __init__(self, scene, obj_index):
+    def __init__(self, scene, index):
         self.scene = scene
-        self.obj_index = obj_index
+        self.index = index
         self.deleted_obj = None
 
     def redo(self):
-        if 0 <= self.obj_index < len(self.scene.objects):
-            self.deleted_obj = self.scene.objects.pop(self.obj_index)
+        if 0 <= self.index < len(self.scene.objects):
+            self.deleted_obj = self.scene.objects.pop(self.index)
 
     def undo(self):
         if self.deleted_obj:
-            self.scene.objects.insert(self.obj_index, self.deleted_obj)
+            self.scene.objects.insert(self.index, self.deleted_obj)
 
 class RenameObjectCommand(Command):
     def __init__(self, obj, new_name):
-        self.obj = obj  # The dict
-        self.old_name = obj.get("name", "Unnamed")
+        self.obj = obj
         self.new_name = new_name
+        self.old_name = obj.get("name", "GameObject")
 
     def redo(self):
         self.obj["name"] = self.new_name
 
     def undo(self):
         self.obj["name"] = self.old_name
+
+class ChangeComponentCommand(Command):
+    def __init__(self, obj, comp_name, key, new_value):
+        self.obj = obj
+        self.comp_name = comp_name
+        self.key = key
+        self.new_value = new_value
+        self.old_value = obj["components"][comp_name].get(key)
+
+    def redo(self):
+        self.obj["components"][self.comp_name][self.key] = self.new_value
+
+    def undo(self):
+        self.obj["components"][self.comp_name][self.key] = self.old_value
+
+class AddComponentCommand(Command):
+    def __init__(self, obj, comp_name, data):
+        self.obj = obj
+        self.comp_name = comp_name
+        self.data = data
+
+    def redo(self):
+        self.obj["components"][self.comp_name] = self.data
+
+    def undo(self):
+        del self.obj["components"][self.comp_name]
+
+class RemoveComponentCommand(Command):
+    def __init__(self, obj, comp_name):
+        self.obj = obj
+        self.comp_name = comp_name
+        self.old_data = obj["components"].get(comp_name)
+
+    def redo(self):
+        if self.comp_name in self.obj["components"]:
+            del self.obj["components"][self.comp_name]
+
+    def undo(self):
+        if self.old_data:
+            self.obj["components"][self.comp_name] = self.old_data

@@ -192,25 +192,8 @@ class SceneCanvas(QWidget):
         
         # Draw Sprite/Box
         if pixmap and not pixmap.isNull():
-            tint = sprite_data.get("tint", [255, 255, 255, 255])
-            
-            # If default white/opaque, draw directly
-            if tint == [255, 255, 255, 255] or tint == (255, 255, 255, 255):
-                target_rect = QRectF(-w/2, -h/2, w, h)
-                painter.drawPixmap(target_rect, pixmap, QRectF(pixmap.rect()))
-            else:
-                # Create tinted buffer
-                buffer = QPixmap(pixmap.size())
-                buffer.fill(Qt.transparent)
-                
-                p = QPainter(buffer)
-                p.drawPixmap(0, 0, pixmap)
-                p.setCompositionMode(QPainter.CompositionMode_Multiply)
-                p.fillRect(buffer.rect(), QColor(*tint))
-                p.end()
-                
-                target_rect = QRectF(-w/2, -h/2, w, h)
-                painter.drawPixmap(target_rect, buffer, QRectF(buffer.rect()))
+            target_rect = QRectF(-w/2, -h/2, w, h)
+            painter.drawPixmap(target_rect, pixmap, QRectF(pixmap.rect()))
             # Debug: Draw border around sprite to see if it's there
             # painter.setPen(QColor(255, 0, 255))
             # painter.setBrush(Qt.NoBrush)
@@ -224,7 +207,6 @@ class SceneCanvas(QWidget):
                 painter.setPen(QPen(QColor(70, 70, 70), 1/self.zoom))
             painter.drawRect(QRectF(-w/2, -h/2, w, h))
             
-            painter.setPen(QColor(120, 120, 120))
             painter.setFont(QFont("Segoe UI", 8))
             painter.drawText(QRectF(-w/2, -h/2, w, h), Qt.AlignCenter, obj.get("name", "?")[:8])
 
@@ -238,7 +220,7 @@ class SceneCanvas(QWidget):
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(QRectF(-cw/2, -ch/2, cw, ch))
             
-            # Draw "Camera" label
+            # Label
             scale_factor = 1.0 / self.zoom if self.zoom else 1.0
             painter.save()
             painter.scale(scale_factor, scale_factor)

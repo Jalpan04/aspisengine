@@ -1,13 +1,14 @@
-from pydantic import BaseModel, Field
+from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Any, Optional
 import uuid
-from shared.component_defs import Transform, COMPONENT_MAP
+from shared.component_defs import Transform, Camera, COMPONENT_MAP # Verify import path
 
-class GameObject(BaseModel):
+@dataclass
+class GameObject:
     id: str
     name: str
     active: bool = True
-    components: Dict[str, Any] = Field(default_factory=dict)
+    components: Dict[str, Any] = field(default_factory=dict)
 
     @staticmethod
     def create(name: str = "New Object") -> 'GameObject':
@@ -17,25 +18,31 @@ class GameObject(BaseModel):
         return GameObject(
             id=obj_id,
             name=name,
-            components={"Transform": transform.model_dump()}
+            components={"Transform": asdict(transform)}
         )
 
-class Scene(BaseModel):
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    objects: List[Dict[str, Any]] = Field(default_factory=list) # Stored as dicts for JSON
-    prefabs: Dict[str, Any] = Field(default_factory=dict)
+@dataclass
+class Scene:
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    objects: List[Dict[str, Any]] = field(default_factory=list) # Stored as dicts for JSON
+    prefabs: Dict[str, Any] = field(default_factory=dict)
 
     @staticmethod
     def create_empty(name: str = "New Scene") -> 'Scene':
+        # Default Main Camera
+        cam = GameObject.create("Main Camera")
+        cam.components["Camera"] = asdict(Camera(width=1280, height=720, zoom=1.0, is_main=True))
+        cam.components["Transform"]["position"] = [0.0, 0.0]
+        
         return Scene(
             metadata={"name": name, "version": 1},
-            objects=[],
+            objects=[asdict(cam)],
             prefabs={}
         )
 
     def add_object(self, obj: GameObject):
-        # Convert model to dict for storage if it isn't already
+        # Convert dataclass to dict for storage if it isn't already
         if isinstance(obj, GameObject):
-            self.objects.append(obj.model_dump())
+            self.objects.append(asdict(obj))
         else:
             self.objects.append(obj)

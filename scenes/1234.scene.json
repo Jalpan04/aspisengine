@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "name": "Untitled Scene",
+    "version": 1
+  },
+  "objects": [
+    {
+      "id": "94708f78-8495-4437-8bea-1acd33e3bf1f",
+      "name": "Main Camera",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            86.72747300156323,
+            65.0456047511724
+          ],
+          "rotation": 0.0,
+          "scale": [
+            15.52209328916329,
+            15.52209328916329
+          ]
+        },
+        "Camera": {
+          "width": 1280,
+          "height": 720,
+          "zoom": 1.0,
+          "is_main": true
+        }
+      }
+    },
+    {
+      "id": "d5e223f6-7eb9-41a0-bcc6-7730ae92248e",
+      "name": "Circle",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -199.78292887860138,
+            185.84458500335012
+          ],
+          "rotation": 0.0,
+          "scale": [
+            4.22991546322294,
+            4.22991546322294
+          ]
+        },
+        "CircleCollider": {
+          "radius": 50.0,
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "is_trigger": false
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "layer": 0,
+          "visible": true,
+          "tint": [
+            170,
+            0,
+            127,
+            255
+          ]
+        },
+        "LightSource": {
+          "color": [
+            255,
+            255,
+            255,
+            255
+          ],
+          "intensity": 1.0,
+          "radius": 200.0,
+          "type": "point"
+        }
+      }
+    },
+    {
+      "id": "1efc1d11-6459-4a15-9630-42ad3ddeb594",
+      "name": "Light",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -110.82853362977367,
+            100.06038143997081
+          ],
+          "rotation": 0.0,
+          "scale": [
+            3.3975030104815813,
+            3.3975030104815813
+          ]
+        },
+        "LightSource": {
+          "color": [
+            85,
+            255,
+            255,
+            255
+          ],
+          "intensity": 1.0,
+          "radius": 200.0,
+          "type": "point"
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "layer": 0,
+          "visible": true,
+          "tint": [
+            255,
+            255,
+            255,
+            255
+          ]
+        }
+      }
+    }
+  ],
+  "prefabs": {}
+}

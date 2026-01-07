@@ -96,10 +96,10 @@ class MainWindow(QMainWindow):
         edit_menu = menu_bar.addMenu("Edit")
         undo_action = edit_menu.addAction("Undo")
         undo_action.setShortcut("Ctrl+Z")
-        undo_action.triggered.connect(lambda: [self.state.undo_stack.undo(), self.refresh_ui()]) # Refresh UI?
+        undo_action.triggered.connect(lambda: [self.state.undo_stack.undo(), self.refresh_ui()])
         
         redo_action = edit_menu.addAction("Redo")
-        redo_action.setShortcut("Ctrl+Y")
+        redo_action.setShortcut("Ctrl+Shift+Z")
         redo_action.triggered.connect(lambda: [self.state.undo_stack.redo(), self.refresh_ui()])
 
         # View Menu
@@ -107,6 +107,18 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.dock_hierarchy.toggleViewAction())
         view_menu.addAction(self.dock_inspector.toggleViewAction())
         view_menu.addAction(self.dock_assets.toggleViewAction())
+
+    def refresh_ui(self):
+        """Force a UI refresh after undo/redo."""
+        # Hierarchy refresh
+        if hasattr(self.dock_hierarchy.widget(), "refresh_tree"):
+             self.dock_hierarchy.widget().refresh_tree()
+        
+        # Canvas refresh
+        self.canvas.update()
+        
+        # Inspector refresh via selection pulse
+        self.state.select_object(self.state.selected_object_id)
 
     def new_scene(self):
         self.state.current_scene_path = None
@@ -173,21 +185,9 @@ class MainWindow(QMainWindow):
                 subprocess.Popen(cmd, cwd=self.state.project_root)
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to launch runtime:\n{e}")
+        else:
             QMessageBox.warning(self, "Warning", "Please save the scene before playing.")
             self.save_scene()
-
-    def refresh_ui(self):
-        """Force a UI refresh after undo/redo."""
-        # Hierarchy needs to rebuild tree
-        dock_widget = self.dock_hierarchy.widget()
-        if hasattr(dock_widget, "refresh_tree"):
-            dock_widget.refresh_tree()
-        
-        # Canvas needs repaint
-        self.canvas.update()
-        
-        # Inspector needs refresh
-        self.state.select_object(self.state.selected_object_id) # Re-trigger selection logic
 
     def apply_theme(self):
         # Sharp dark theme - no rounded corners, space efficient

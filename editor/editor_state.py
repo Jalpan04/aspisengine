@@ -7,6 +7,7 @@ import sys
 sys.path.append(os.getcwd())
 
 from shared.scene_schema import Scene, GameObject
+from editor.undo_redo import UndoStack
 
 from .undo_redo import UndoStack
 
