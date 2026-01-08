@@ -90,6 +90,13 @@ class GameRuntime:
                     instance = obj()
                     instance.game_object = game_object
                     instance.transform = game_object # Alias for convenience
+                    
+                    # Inject properties from Inspector
+                    if "Script" in game_object.components:
+                        props = game_object.components["Script"].get("properties", {})
+                        for key, value in props.items():
+                            setattr(instance, key, value)
+                            
                     self.active_scripts.append(instance)
                     print(f"Attached script {name} to {game_object.name}")
                     return
@@ -143,6 +150,7 @@ class GameRuntime:
                 
                 # Load Script
                 if "Script" in comps:
+                    go.components["Script"] = comps["Script"] # Store for access
                     script_path = comps["Script"].get("script_path")
                     if script_path:
                         self.load_script(script_path, go)

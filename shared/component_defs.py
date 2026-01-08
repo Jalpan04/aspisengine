@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict, Any
 
 # Core component types
 COMPONENT_TRANSFORM = "Transform"
@@ -52,6 +52,7 @@ class LightSource:
 @dataclass
 class Script:
     script_path: str = ""
+    properties: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class Camera:

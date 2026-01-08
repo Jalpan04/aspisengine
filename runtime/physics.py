@@ -120,14 +120,34 @@ class PhysicsSystem:
         restitution_2 = rb2.get("restitution", 0.5) if rb2 else 0.5
         e = (restitution_1 + restitution_2) / 2.0
         
-        if rb1 and not rb2:
+        m1 = rb1.get("mass", 0.0) if rb1 else 0.0
+        m2 = rb2.get("mass", 0.0) if rb2 else 0.0
+        
+        # Determine which object(s) are dynamic (movable)
+        dynamic1 = rb1 is not None and m1 > 0
+        dynamic2 = rb2 is not None and m2 > 0
+        
+        # Calculate inverse normal for c2
+        neg_normal = [-normal[0], -normal[1]]
+
+        if dynamic1 and not dynamic2:
             self.apply_resolution(c1, normal, overlap, e) # Push c1 away (along normal)
-        elif rb2 and not rb1:
-            self.apply_resolution(c2, normal, -overlap, e) # Push c2 away (against normal)
+        elif dynamic2 and not dynamic1:
+            self.apply_resolution(c2, neg_normal, overlap, e) # Push c2 away (along neg_normal)
+        elif dynamic1 and dynamic2:
+            # Mass-based resolution
+            total_mass = m1 + m2
+            if total_mass == 0:
+                ratio1 = 0.5
+                ratio2 = 0.5
+            else:
+                ratio1 = m2 / total_mass # If m1 is huge (heavy), ratio1 is small (moves less)
+                ratio2 = m1 / total_mass
+            
+            self.apply_resolution(c1, normal, overlap * ratio1, e)
+            self.apply_resolution(c2, neg_normal, overlap * ratio2, e)
         else:
-            # Both dynamic
-            self.apply_resolution(c1, normal, overlap * 0.5, e)
-            self.apply_resolution(c2, normal, -overlap * 0.5, e)
+            pass
 
     def apply_resolution(self, collider, normal, pixel_depth, restitution):
         obj = collider["obj"]

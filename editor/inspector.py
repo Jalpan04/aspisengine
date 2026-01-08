@@ -5,6 +5,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QDoubleValidator
 from editor.editor_state import EditorState
+from editor.script_parser import ScriptParser
+from editor.undo_redo import AddComponentCommand, ChangeComponentCommand, RemoveComponentCommand
 import os
 
 class FloatField(QLineEdit):
@@ -515,10 +517,61 @@ class InspectorPanel(QWidget):
         path_layout.addWidget(browse_btn)
         
         form.addRow("Script:", path_widget)
+
+        # Properties
+        if current_path:
+            full_path = os.path.join(self.state.project_root, current_path)
+            defaults = ScriptParser.parse_properties(full_path)
+            
+            # Merge stored properties
+            stored_props = data.get("properties", {})
+            
+            # Ensure all defaults are present in stored_props if not set
+            # But we don't necessarily save them back unless changed
+            
+            for key, default_val in defaults.items():
+                current_val = stored_props.get(key, default_val)
+                
+                # Check type
+                if isinstance(default_val, (int, float)):
+                    field = FloatField(float(current_val))
+                    field.value_edited.connect(lambda v, k=key: self.preview_script_property(obj, k, v))
+                    field.value_committed.connect(lambda v, k=key: self.update_script_property(obj, k, v))
+                    form.addRow(f"{key}:", field)
+                elif isinstance(default_val, bool):
+                    check = QCheckBox()
+                    check.setChecked(bool(current_val))
+                    # Note: QCheckBox doesn't separate edited/committed clearly, so we just update
+                    check.stateChanged.connect(lambda s, k=key: self.update_script_property(obj, k, s == 2))
+                    form.addRow(f"{key}:", check)
+                # TODO: String, Color support?
         
         form_widget = QWidget()
         form_widget.setLayout(form)
         self.content_layout.addWidget(form_widget)
+
+    def preview_script_property(self, obj, key, value):
+        if "Script" in obj.get("components", {}):
+            if "properties" not in obj["components"]["Script"]:
+                obj["components"]["Script"]["properties"] = {}
+            obj["components"]["Script"]["properties"][key] = value
+            # self.state.scene_loaded.emit() # Optional: heavy reload?
+
+    def update_script_property(self, obj, key, value):
+        if "Script" in obj.get("components", {}):
+            if "properties" not in obj["components"]["Script"]:
+                obj["components"]["Script"]["properties"] = {}
+            
+            current = obj["components"]["Script"]["properties"].get(key)
+            if current != value:
+                # We need a specific Command or reuse ChangeComponentCommand
+                # Reusing ChangeComponentCommand is tricky because the path is deeper (components -> Script -> properties -> key)
+                # Simplified: Direct update for now, or add specific command later
+                obj["components"]["Script"]["properties"][key] = value
+                
+                # To support undo properly, we should really update ChangeComponentCommand to support nested keys or make a generic SetPropertyCommand
+                # For now, let's just trigger scene load emit to save state
+                self.state.scene_loaded.emit()
 
     def pick_script(self, obj, label_widget):
         path, _ = QFileDialog.getOpenFileName(

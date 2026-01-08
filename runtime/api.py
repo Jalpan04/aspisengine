@@ -42,3 +42,12 @@ class Script:
     def on_collision_enter(self, other):
         """Called when this object collides with another."""
         pass
+
+class KeyCode:
+    """Mapping to Pygame keys."""
+    W = pygame.K_w
+    S = pygame.K_s
+    UP = pygame.K_UP
+    DOWN = pygame.K_DOWN
+    SPACE = pygame.K_SPACE
+    ESCAPE = pygame.K_ESCAPE

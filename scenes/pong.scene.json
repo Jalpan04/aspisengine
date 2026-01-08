@@ -1,124 +1,166 @@
 {
-  "metadata": {},
+  "metadata": {
+    "name": "Pong Demo",
+    "created_at": "2024-04-20T12:00:00.000000"
+  },
   "objects": [
     {
-      "id": "paddle_left",
-      "name": "Paddle Left",
+      "id": "camera",
+      "name": "Main Camera",
+      "active": true,
       "components": {
         "Transform": {
           "position": [
-            50.0,
-            300.0
+            0,
+            0
           ],
           "rotation": 0,
           "scale": [
-            0.03125,
-            0.125
+            1,
+            1
+          ]
+        },
+        "Camera": {
+          "width": 800,
+          "height": 600,
+          "zoom": 1.0,
+          "is_main": true
+        }
+      }
+    },
+    {
+      "id": "paddle_left",
+      "name": "PaddleLeft",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -350,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.4,
+            2.0
           ]
         },
         "SpriteRenderer": {
-          "sprite_path": "assets/paddle.png",
+          "sprite_path": "",
           "layer": 1,
-          "visible": false
+          "visible": true,
+          "tint": [
+            255,
+            50,
+            50,
+            255
+          ]
         },
         "BoxCollider": {
           "size": [
-            32.0,
-            128.0
+            20,
+            100
           ],
           "offset": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "is_trigger": false
         },
         "RigidBody": {
-          "mass": 0.0,
-          "drag": 0.0,
+          "mass": 50.0,
+          "drag": 5.0,
           "use_gravity": false,
-          "velocity": [
-            0.0,
-            0.0
-          ]
+          "restitution": 0.0
         },
         "Script": {
-          "script_path": "scripts/PaddleController.py"
+          "script_path": "scripts/PongPaddle.py"
         }
       }
     },
     {
       "id": "paddle_right",
-      "name": "Paddle Right",
+      "name": "PaddleRight",
+      "active": true,
       "components": {
         "Transform": {
           "position": [
-            750.0,
-            300.0
+            350,
+            0
           ],
           "rotation": 0,
           "scale": [
-            0.03125,
-            0.125
+            0.4,
+            2.0
           ]
         },
         "SpriteRenderer": {
-          "sprite_path": "assets/paddle.png",
+          "sprite_path": "",
           "layer": 1,
-          "visible": false
+          "visible": true,
+          "tint": [
+            50,
+            50,
+            255,
+            255
+          ]
         },
         "BoxCollider": {
           "size": [
-            32.0,
-            128.0
+            20,
+            100
           ],
           "offset": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "is_trigger": false
         },
         "RigidBody": {
-          "mass": 0.0,
-          "drag": 0.0,
+          "mass": 50.0,
+          "drag": 5.0,
           "use_gravity": false,
-          "velocity": [
-            0.0,
-            0.0
-          ]
+          "restitution": 0.0
         },
         "Script": {
-          "script_path": "scripts/PaddleController.py"
+          "script_path": "scripts/PongPaddle.py"
         }
       }
     },
     {
       "id": "ball",
       "name": "Ball",
+      "active": true,
       "components": {
         "Transform": {
           "position": [
-            400.0,
-            300.0
+            0,
+            0
           ],
           "rotation": 0,
           "scale": [
-            0.03125,
-            0.03125
+            0.4,
+            0.4
           ]
         },
         "SpriteRenderer": {
-          "sprite_path": "assets/ball.png",
+          "sprite_path": "",
           "layer": 2,
-          "visible": false
+          "visible": true,
+          "tint": [
+            0,
+            255,
+            0,
+            255
+          ]
         },
         "BoxCollider": {
           "size": [
-            32.0,
-            32.0
+            20,
+            20
           ],
           "offset": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "is_trigger": false
         },
@@ -128,93 +170,165 @@
           "use_gravity": false,
           "restitution": 1.0,
           "velocity": [
-            200.0,
-            150.0
+            200,
+            200
           ]
         },
         "Script": {
-          "script_path": "scripts/Ball.py"
+          "script_path": "scripts/PongBall.py",
+          "properties": {
+            "speed": 0.0
+          }
         }
       }
     },
     {
       "id": "wall_top",
-      "name": "Wall Top",
+      "name": "WallTop",
+      "active": true,
       "components": {
         "Transform": {
           "position": [
-            400.0,
-            -10.0
+            0,
+            -290
           ],
           "rotation": 0,
           "scale": [
-            1.0,
-            1.0
+            16.0,
+            0.4
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "layer": 0,
+          "visible": true,
+          "tint": [
+            100,
+            100,
+            100,
+            255
           ]
         },
         "BoxCollider": {
           "size": [
-            800.0,
-            20.0
+            800,
+            20
           ],
           "offset": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "is_trigger": false
         },
-        "RigidBody": null
+        "RigidBody": {
+          "mass": 0.0,
+          "drag": 0.0,
+          "use_gravity": false,
+          "restitution": 1.0
+        }
       }
     },
     {
       "id": "wall_bottom",
-      "name": "Wall Bottom",
+      "name": "WallBottom",
+      "active": true,
       "components": {
         "Transform": {
           "position": [
-            396.42025388624126,
-            252.5275110201114
+            0,
+            290
           ],
           "rotation": 0,
           "scale": [
-            1.0,
-            1.0
+            16.0,
+            0.4
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "layer": 0,
+          "visible": true,
+          "tint": [
+            100,
+            100,
+            100,
+            255
           ]
         },
         "BoxCollider": {
           "size": [
-            800.0,
-            20.0
+            800,
+            20
           ],
           "offset": [
-            0.0,
-            0.0
+            0,
+            0
           ],
           "is_trigger": false
         },
-        "RigidBody": null
+        "RigidBody": {
+          "mass": 0.0,
+          "drag": 0.0,
+          "use_gravity": false,
+          "restitution": 1.0
+        }
       }
     },
     {
-      "id": "main_camera",
-      "name": "Main Camera",
+      "id": "wall_left_limit",
+      "name": "LimitLeft",
+      "active": true,
       "components": {
         "Transform": {
           "position": [
-            400.0,
-            300.0
+            -410,
+            0
           ],
           "rotation": 0,
           "scale": [
-            1.0,
-            1.0
+            0.4,
+            12.0
           ]
         },
-        "Camera": {
-          "width": 800.0,
-          "height": 600.0,
-          "zoom": 1.0,
-          "is_main": true
+        "BoxCollider": {
+          "size": [
+            20,
+            600
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": true
+        }
+      }
+    },
+    {
+      "id": "wall_right_limit",
+      "name": "LimitRight",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            410,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.4,
+            12.0
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            20,
+            600
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": true
         }
       }
     }
