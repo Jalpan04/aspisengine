@@ -12,7 +12,7 @@ import os
 class FloatField(QLineEdit):
     """Compact float input field."""
     value_edited = Signal(float)      # Live updates (preview)
-    value_committed = Signal(float)   # Final update (undoable)
+    value_committed = Signal(float, float)   # Final update (new, old)
     
     def __init__(self, value=0.0):
         super().__init__()
@@ -46,8 +46,9 @@ class FloatField(QLineEdit):
         try:
             val = float(self.text())
             if val != self._last_committed_value:
+                old_val = self._last_committed_value
                 self._last_committed_value = val
-                self.value_committed.emit(val)
+                self.value_committed.emit(val, old_val)
         except ValueError:
             pass
 
@@ -61,10 +62,14 @@ class FloatField(QLineEdit):
 class Vec2Field(QWidget):
     """X/Y input pair."""
     value_edited = Signal(float, float)
-    value_committed = Signal(float, float)
+    value_committed = Signal(float, float, float, float) # new_x, new_y, old_x, old_y
     
     def __init__(self, x=0.0, y=0.0, labels=("X", "Y")):
         super().__init__()
+        self.last_x = x
+        self.last_y = y
+        self.block_updates = False
+        
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
@@ -91,8 +96,9 @@ class Vec2Field(QWidget):
         self.x_field.value_edited.connect(lambda v: self._emit_edit())
         self.y_field.value_edited.connect(lambda v: self._emit_edit())
         
-        self.x_field.value_committed.connect(lambda v: self._emit_commit())
-        self.y_field.value_committed.connect(lambda v: self._emit_commit())
+        # We handle commit manually to capture state
+        self.x_field.value_committed.connect(lambda n, o: self._emit_commit())
+        self.y_field.value_committed.connect(lambda n, o: self._emit_commit())
     
     def _emit_edit(self):
         try:
@@ -103,16 +109,26 @@ class Vec2Field(QWidget):
             pass
 
     def _emit_commit(self):
+        if self.block_updates: return
         try:
             x = float(self.x_field.text())
             y = float(self.y_field.text())
-            self.value_committed.emit(x, y)
+            
+            if x != self.last_x or y != self.last_y:
+                old_x, old_y = self.last_x, self.last_y
+                self.last_x = x
+                self.last_y = y
+                self.value_committed.emit(x, y, old_x, old_y)
         except ValueError:
             pass
 
     def set_value(self, x, y):
+        self.block_updates = True
         self.x_field.set_value(x)
         self.y_field.set_value(y)
+        self.last_x = x
+        self.last_y = y
+        self.block_updates = False
 
 
 class ColorField(QPushButton):
@@ -132,13 +148,14 @@ class ColorField(QPushButton):
         self.setStyleSheet(f"background-color: rgba({r},{g},{b},{a/255.0:.2f}); border: 1px solid #555;")
 
     def _pick_color(self):
-        from PySide6.QtWidgets import QColorDialog
         from PySide6.QtGui import QColor
+        from editor.color_picker import ModernColorPicker
+        
         r, g, b, a = self.color
         cur = QColor(r, g, b, a)
         
-        c = QColorDialog.getColor(cur, self, "Pick Tint", QColorDialog.ShowAlphaChannel | QColorDialog.DontUseNativeDialog)
-        if c.isValid():
+        c = ModernColorPicker.get_color_dialog(cur, self)
+        if c and c.isValid():
             self.color = (c.red(), c.green(), c.blue(), c.alpha())
             self._update_style()
             self.value_changed.emit(list(self.color))
@@ -174,11 +191,13 @@ class InspectorPanel(QWidget):
         
         self.show_placeholder("No selection")
 
+        self.active_editors = {} # (comp_name, key) -> widget
         self.state = EditorState.instance()
         self.state.selection_changed.connect(self.on_selection_changed)
+        self.state.scene_loaded.connect(self.refresh_values)
 
     def on_selection_changed(self, obj_id):
-        self.clear_content()
+        self.clear_content() # Clears active_editors too
         
         if not obj_id:
             self.show_placeholder("No selection")
@@ -196,12 +215,39 @@ class InspectorPanel(QWidget):
             item = self.content_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
+        self.active_editors.clear()
 
     def show_placeholder(self, text):
         placeholder = QLabel(text)
         placeholder.setStyleSheet("color: #555555; padding: 10px;")
         placeholder.setAlignment(Qt.AlignCenter)
         self.content_layout.addWidget(placeholder)
+
+    def refresh_values(self):
+        """Updates active editors from current object state without rebuilding UI."""
+        if not self.state.selected_object_id:
+            return
+            
+        obj = self.state.get_selected_object()
+        if not obj:
+            return
+            
+        # Iterate over active editors and update their values
+        for (comp_name, key), widget in self.active_editors.items():
+            if comp_name in obj.get("components", {}):
+                data = obj["components"][comp_name]
+                if key in data:
+                    val = data[key]
+                    
+                    # Update widget safely
+                    if isinstance(widget, Vec2Field):
+                        if isinstance(val, (list, tuple)) and len(val) >= 2:
+                            widget.set_value(val[0], val[1])
+                    elif isinstance(widget, FloatField):
+                        widget.set_value(float(val))
+                    elif isinstance(widget, ColorField):
+                        widget.set_value(val)
+                    # Add more types as needed
 
     def create_header(self, text, obj, comp_name):
         """Creates a header with a remove button (unless it's Transform)."""
@@ -324,31 +370,34 @@ class InspectorPanel(QWidget):
         pos = data.get("position", [0, 0])
         pos_field = Vec2Field(pos[0], pos[1])
         pos_field.value_edited.connect(lambda x, y: self.preview_transform(obj, "position", (x, y)))
-        pos_field.value_committed.connect(lambda x, y: self.commit_transform(obj, "position", (x, y)))
+        pos_field.value_committed.connect(lambda nx, ny, ox, oy: self.commit_transform(obj, "position", (nx, ny), (ox, oy)))
         
         pos_label = QLabel("Position:")
         pos_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(pos_label, pos_field)
+        self.active_editors[("Transform", "position")] = pos_field
 
         # Rotation
         rot = data.get("rotation", 0)
         rot_field = FloatField(rot)
         rot_field.value_edited.connect(lambda v: self.preview_transform(obj, "rotation", v))
-        rot_field.value_committed.connect(lambda v: self.commit_transform(obj, "rotation", v))
+        rot_field.value_committed.connect(lambda n, o: self.commit_transform(obj, "rotation", n, o))
         
         rot_label = QLabel("Rotation:")
         rot_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(rot_label, rot_field)
+        self.active_editors[("Transform", "rotation")] = rot_field
 
         # Scale
         scale = data.get("scale", [1, 1])
         scale_field = Vec2Field(scale[0], scale[1])
         scale_field.value_edited.connect(lambda x, y: self.preview_transform(obj, "scale", (x, y)))
-        scale_field.value_committed.connect(lambda x, y: self.commit_transform(obj, "scale", (x, y)))
+        scale_field.value_committed.connect(lambda nx, ny, ox, oy: self.commit_transform(obj, "scale", (nx, ny), (ox, oy)))
         
         scale_label = QLabel("Scale:")
         scale_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(scale_label, scale_field)
+        self.active_editors[("Transform", "scale")] = scale_field
 
         form_widget = QWidget()
         form_widget.setLayout(form)
@@ -358,9 +407,10 @@ class InspectorPanel(QWidget):
         val = list(value) if isinstance(value, tuple) else value
         self.preview_component(obj, "Transform", key, val)
 
-    def commit_transform(self, obj, key, value):
+    def commit_transform(self, obj, key, value, old_value=None):
         val = list(value) if isinstance(value, tuple) else value
-        self.update_component(obj, "Transform", key, val)
+        old = list(old_value) if isinstance(old_value, tuple) else old_value
+        self.update_component(obj, "Transform", key, val, old_value=old)
 
     def add_component_section(self, name, data, obj):
         self.content_layout.addWidget(self.create_header(name, obj, name))
@@ -695,6 +745,7 @@ class InspectorPanel(QWidget):
         mass_label = QLabel("Mass:")
         mass_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(mass_label, mass_field)
+        self.active_editors[("RigidBody", "mass")] = mass_field
 
         # Drag
         drag = data.get("drag", 0.0)
@@ -705,6 +756,7 @@ class InspectorPanel(QWidget):
         drag_label = QLabel("Drag:")
         drag_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(drag_label, drag_field)
+        self.active_editors[("RigidBody", "drag")] = drag_field
 
         # Use Gravity
         use_gravity = data.get("use_gravity", True)
@@ -745,6 +797,7 @@ class InspectorPanel(QWidget):
         size_label = QLabel("Size:")
         size_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(size_label, size_field)
+        self.active_editors[("BoxCollider", "size")] = size_field
 
         # Offset
         offset = data.get("offset", [0.0, 0.0])
@@ -755,6 +808,7 @@ class InspectorPanel(QWidget):
         offset_label = QLabel("Offset:")
         offset_label.setStyleSheet("color: #666666; font-size: 10px;")
         form.addRow(offset_label, offset_field)
+        self.active_editors[("BoxCollider", "offset")] = offset_field
 
         # Is Trigger
         is_trigger = data.get("is_trigger", False)
@@ -768,7 +822,7 @@ class InspectorPanel(QWidget):
 
         # Sync Button
         if "SpriteRenderer" in obj.get("components", {}):
-            sync_btn = QPushButton("Sync Valid Size")
+            sync_btn = QPushButton("Snap to Visual Size")
             sync_btn.setFixedHeight(20)
             sync_btn.clicked.connect(lambda: self.sync_collider_size(obj))
             form.addRow("", sync_btn)
@@ -778,33 +832,56 @@ class InspectorPanel(QWidget):
         self.content_layout.addWidget(form_widget)
 
     def sync_collider_size(self, obj):
+        # 1. Get Scale
+        scale = [1.0, 1.0]
+        if "Transform" in obj.get("components", {}):
+            scale = obj["components"]["Transform"].get("scale", [1.0, 1.0])
+            
+        # 2. Get Base Size (Sprite or Default)
         sprite_data = obj["components"].get("SpriteRenderer", {})
         path = sprite_data.get("sprite_path", "")
-        if not path:
-             return
         
-        full_path = os.path.join(self.state.project_root, path)
-        if os.path.exists(full_path):
-            from PySide6.QtGui import QImage
-            img = QImage(full_path)
-            if not img.isNull():
-                w, h = img.width(), img.height()
-                self.update_component(obj, "BoxCollider", "size", [float(w), float(h)])
+        base_w, base_h = 50.0, 50.0 # Default fallback
+        
+        if path:
+            full_path = os.path.join(self.state.project_root, path)
+            if os.path.exists(full_path):
+                from PySide6.QtGui import QImage
+                img = QImage(full_path)
+                if not img.isNull():
+                    base_w = float(img.width())
+                    base_h = float(img.height())
 
+        # 3. Calculate Final Size (Base * Scale)
+        final_w = base_w * abs(scale[0])
+        final_h = base_h * abs(scale[1])
+        
+        self.update_component(obj, "BoxCollider", "size", [final_w, final_h])
+        
     def preview_component(self, obj, comp_name, key, value):
         """Updates the component data directly without undo history (for live preview)."""
         if comp_name in obj.get("components", {}):
             obj["components"][comp_name][key] = value
             self.state.scene_loaded.emit()
 
-    def update_component(self, obj, comp_name, key, value):
+    def update_component(self, obj, comp_name, key, value, old_value=None):
         if comp_name in obj.get("components", {}):
             current = obj["components"][comp_name].get(key)
-            if current != value:
-                cmd = ChangeComponentCommand(obj, comp_name, key, value)
-                self.state.undo_stack.push(cmd)
-                cmd.redo()
-                self.state.scene_loaded.emit()
+            
+            # If old_value is provided, we skip the equality check because current might already == value (preview)
+            if old_value is None and current == value:
+                return
+
+            cmd = ChangeComponentCommand(obj, comp_name, key, value)
+            if old_value is not None:
+                 cmd.old_value = old_value
+                 
+            self.state.undo_stack.push(cmd)
+            # cmd.redo() # Redo is implicit if we trust 'value' is what we want. 
+            # BUT: redo() sets obj[...] = value. If obj is already value, it does nothing harmful.
+            cmd.redo()
+            
+            self.state.scene_loaded.emit()
 
     def show_add_menu(self, obj, available, button):
         from PySide6.QtWidgets import QMenu

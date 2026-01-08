@@ -90,7 +90,7 @@
           "rotation": 0,
           "scale": [
             0.4,
-            2.0
+            4.0
           ]
         },
         "SpriteRenderer": {
@@ -106,8 +106,8 @@
         },
         "BoxCollider": {
           "size": [
-            20,
-            100
+            20.0,
+            200.0
           ],
           "offset": [
             0,
@@ -177,7 +177,7 @@
         "Script": {
           "script_path": "scripts/PongBall.py",
           "properties": {
-            "speed": 0.0
+            "speed": 500.0
           }
         }
       }

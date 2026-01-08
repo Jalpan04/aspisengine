@@ -172,6 +172,13 @@ class GameRuntime:
         for script in self.active_scripts:
             try:
                 script.start()
+                
+                # Re-inject properties to override defaults set in start()
+                # This ensures Inspector values take precedence
+                if hasattr(script, "game_object") and "Script" in script.game_object.components:
+                    props = script.game_object.components["Script"].get("properties", {})
+                    for key, value in props.items():
+                         setattr(script, key, value)
             except Exception as e:
                 print(f"Error in Start() of {script}: {e}")
 
@@ -254,11 +261,20 @@ class GameRuntime:
                     rot = go.rotation
                     scale = go.scale
                     
+                    # DEBUG: Print rotation
+                    # print(f"Object {go.name} Rotation: {rot}")
+                    
                     # Tint
                     tint = sprite_data.get("tint", [255, 255, 255, 255])
                     if tint != [255, 255, 255, 255]:
                         img = img.copy()
-                        img.fill(tint, special_flags=pygame.BLEND_RGBA_MULT)
+                        # 1. Apply Color Tint (RGB) - Keep Alpha 255 here to not double-multiply
+                        if tint[0] != 255 or tint[1] != 255 or tint[2] != 255:
+                            img.fill((tint[0], tint[1], tint[2], 255), special_flags=pygame.BLEND_RGBA_MULT)
+                        
+                        # 2. Apply Alpha Transparency
+                        if tint[3] != 255:
+                            img.set_alpha(tint[3])
                     
                     # Simple handling for negative scales (flipping)
                     if scale[0] < 0: 

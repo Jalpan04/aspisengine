@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPixmap, QCursor, QPolygonF
 from PySide6.QtCore import Qt, QRectF, QPointF
 from editor.editor_state import EditorState
+from editor.undo_redo import ChangeComponentCommand
 import os
 import math
 
@@ -413,6 +414,37 @@ class SceneCanvas(QWidget):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
+            
+            # Check if we were dragging/transforming
+            if self.active_handle != self.HANDLE_NONE and self.state.selected_object_id:
+                obj = self.state.get_selected_object()
+                if obj and "Transform" in obj.get("components", {}):
+                    transform = obj["components"]["Transform"]
+                    
+                    if self.active_handle == self.HANDLE_MOVE:
+                        current_pos = transform.get("position", [0, 0])
+                        start_pos = self.drag_obj_start_pos
+                        if current_pos != start_pos:
+                            cmd = ChangeComponentCommand(obj, "Transform", "position", list(current_pos))
+                            cmd.old_value = list(start_pos)
+                            self.state.undo_stack.push(cmd)
+                            
+                    elif self.active_handle == self.HANDLE_ROTATE:
+                        current_rot = transform.get("rotation", 0)
+                        start_rot = self.drag_rot_start
+                        if current_rot != start_rot:
+                            cmd = ChangeComponentCommand(obj, "Transform", "rotation", current_rot)
+                            cmd.old_value = start_rot
+                            self.state.undo_stack.push(cmd)
+                            
+                    else: # Scale handles
+                        current_scale = transform.get("scale", [1, 1])
+                        start_scale = self.drag_scale_start
+                        if current_scale != start_scale:
+                            cmd = ChangeComponentCommand(obj, "Transform", "scale", list(current_scale))
+                            cmd.old_value = list(start_scale)
+                            self.state.undo_stack.push(cmd)
+            
             self.panning = False
             self.active_handle = self.HANDLE_NONE
             self.setCursor(Qt.ArrowCursor)
