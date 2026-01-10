@@ -47,16 +47,15 @@ def add_circle_collider(obj, r):
     }
 
 def add_rigidbody(obj, mass=1.0, dynamic=True, friction=0.5, restitution=0.5, velocity=[0,0]):
-    if dynamic:
-        obj["components"]["RigidBody"] = {
-            "mass": mass,
-            "drag": 0.05,
-            "use_gravity": True,
-            "restitution": restitution,
-            "friction": friction,
-            "fixed_rotation": False,
-            "velocity": velocity
-        }
+    obj["components"]["RigidBody"] = {
+        "mass": mass if dynamic else 0,
+        "drag": 0.05,
+        "use_gravity": True if dynamic else False,
+        "restitution": restitution,
+        "friction": friction,
+        "fixed_rotation": False,
+        "velocity": velocity if dynamic else [0, 0]
+    }
 
 def add_renderer(obj, color, size=(50,50)):
     # Create simple colored sprite representation
@@ -90,6 +89,7 @@ def gen_tower():
     # Ground
     ground = create_obj("Ground", [0, 300], scale=[20, 0.5]) # Visual: 2000x50
     add_box_collider(ground, 2000, 50)
+    add_rigidbody(ground, dynamic=False, restitution=0.1) # Low bounce for stability
     add_renderer(ground, [100, 100, 100, 255])
     scene["objects"].append(ground)
     
@@ -117,6 +117,7 @@ def gen_bounce():
     # Ground
     ground = create_obj("Ground", [0, 300], scale=[20, 0.5])
     add_box_collider(ground, 2000, 50)
+    add_rigidbody(ground, dynamic=False, restitution=1.0) # High restitution ground
     add_renderer(ground, [100, 100, 100, 255])
     scene["objects"].append(ground)
 
@@ -204,6 +205,7 @@ def gen_mass():
     
     ground = create_obj("Ground", [0, 300], scale=[20, 0.5]) # Visual 2000x50
     add_box_collider(ground, 2000, 50)
+    add_rigidbody(ground, dynamic=False, restitution=0.1) # Decouple from heavy objects
     add_renderer(ground, [100, 100, 100, 255])
     scene["objects"].append(ground)
     

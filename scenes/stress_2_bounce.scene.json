@@ -1,9 +1,9 @@
 {
-  "id": "2eb41440-8b4f-4eed-894f-1d5d3d4e65ab",
+  "id": "d9da50e8-8ce6-474c-a2f7-e110a62e235f",
   "name": "Stress Test 2 - Bouncy House",
   "objects": [
     {
-      "id": "09876b02-7c54-48cf-a0df-ed5466861627",
+      "id": "f49ddbb3-ff6e-49b5-a1f8-538084032189",
       "name": "Main Camera",
       "active": true,
       "components": {
@@ -29,7 +29,7 @@
       "children": []
     },
     {
-      "id": "10638ae0-4d35-41a4-8412-12d05853ff36",
+      "id": "d9cf9d08-e3ae-42bc-929f-fabc75643b52",
       "name": "Ground",
       "active": true,
       "components": {
@@ -56,6 +56,18 @@
           ],
           "is_trigger": false
         },
+        "RigidBody": {
+          "mass": 0,
+          "drag": 0.05,
+          "use_gravity": false,
+          "restitution": 1.0,
+          "friction": 0.5,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
         "Background": {
           "color": [
             100,
@@ -70,7 +82,7 @@
       "children": []
     },
     {
-      "id": "ed2074b3-9634-4c39-bacc-b13105d51fc9",
+      "id": "80497e21-7460-4f66-9131-5edb7c333722",
       "name": "Ball_0.5",
       "active": true,
       "components": {
@@ -119,7 +131,7 @@
       "children": []
     },
     {
-      "id": "4ff609b1-9d10-49de-82f9-ee33c3b24cfb",
+      "id": "648bf383-bc07-4834-964d-75727681e42c",
       "name": "Ball_0.9",
       "active": true,
       "components": {
@@ -168,7 +180,7 @@
       "children": []
     },
     {
-      "id": "85d6f91c-52f8-44df-8681-414bbf5f94d7",
+      "id": "d70c7f0b-93e8-48c8-8e07-e8d8f8295010",
       "name": "Ball_1.2",
       "active": true,
       "components": {

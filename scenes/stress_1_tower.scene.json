@@ -1,8 +1,9 @@
 {
-  "metadata": {},
+  "id": "b93bfbe1-f939-404c-acdd-b67372184cea",
+  "name": "Stress Test 1 - The Tower",
   "objects": [
     {
-      "id": "a3ab4153-c4ad-45dd-a9e1-30598d2b402e",
+      "id": "640f6f36-7802-4099-888b-ef7cfdefa8d2",
       "name": "Main Camera",
       "active": true,
       "components": {
@@ -19,16 +20,16 @@
           "parent_id": null
         },
         "Camera": {
-          "width": 800.0,
-          "height": 1100.0,
-          "zoom": 0.0,
+          "width": 800,
+          "height": 600,
+          "zoom": 0.8,
           "is_main": true
         }
       },
       "children": []
     },
     {
-      "id": "459828c6-8efc-4f59-bf21-89ee1f846d0c",
+      "id": "d8d43361-2c46-4b1d-a56e-77e9e85c22f1",
       "name": "Ground",
       "active": true,
       "components": {
@@ -55,6 +56,18 @@
           ],
           "is_trigger": false
         },
+        "RigidBody": {
+          "mass": 0,
+          "drag": 0.05,
+          "use_gravity": false,
+          "restitution": 0.1,
+          "friction": 0.5,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
         "Background": {
           "color": [
             100,
@@ -69,7 +82,7 @@
       "children": []
     },
     {
-      "id": "21231199-cfe5-4716-8bac-e54856ec4566",
+      "id": "374116ff-9ca4-4bae-b73a-d2f20dda5882",
       "name": "Box_0",
       "active": true,
       "components": {
@@ -122,7 +135,7 @@
       "children": []
     },
     {
-      "id": "d3ee0e07-9ebf-4a79-95b2-11896403a675",
+      "id": "4767a8ae-15c0-48a6-9550-776444b45ab9",
       "name": "Box_1",
       "active": true,
       "components": {
@@ -175,7 +188,7 @@
       "children": []
     },
     {
-      "id": "778eadc1-19ff-4bcd-aaaf-e258a3c7265e",
+      "id": "095b8501-74c1-4f45-b867-6571f5ef66e9",
       "name": "Box_2",
       "active": true,
       "components": {
@@ -228,7 +241,7 @@
       "children": []
     },
     {
-      "id": "2c944808-f6f4-4bc2-b053-a73c17912db8",
+      "id": "9d95b6da-7052-445d-8eeb-0c8b19747c3b",
       "name": "Box_3",
       "active": true,
       "components": {
@@ -281,7 +294,7 @@
       "children": []
     },
     {
-      "id": "dceba557-3b09-4120-afb9-4fb266ee3aa2",
+      "id": "8ee5ec07-eef2-4fb3-970b-740ec897c668",
       "name": "Box_4",
       "active": true,
       "components": {
@@ -334,7 +347,7 @@
       "children": []
     },
     {
-      "id": "d3f9f33a-cd2b-4eb4-b421-00de5241c8c5",
+      "id": "8f8699ef-18c1-4bcf-88d7-bde55427f340",
       "name": "Box_5",
       "active": true,
       "components": {
@@ -387,7 +400,7 @@
       "children": []
     },
     {
-      "id": "d6851d57-8a9f-4fa8-ae09-36734ac4bb0d",
+      "id": "8149fd08-aec3-41ac-859f-6af4212339a3",
       "name": "Box_6",
       "active": true,
       "components": {
@@ -440,7 +453,7 @@
       "children": []
     },
     {
-      "id": "84d25dd7-30d9-4249-b8d0-a43be568a4d1",
+      "id": "698ae7e9-975e-42be-8fc1-8ebb2b4abb76",
       "name": "Box_7",
       "active": true,
       "components": {
@@ -493,7 +506,7 @@
       "children": []
     },
     {
-      "id": "371dac51-6d9c-4b63-805b-7842aecc0ec5",
+      "id": "e6024c74-52f7-451a-9788-e3d14eb09b22",
       "name": "Box_8",
       "active": true,
       "components": {
@@ -546,7 +559,7 @@
       "children": []
     },
     {
-      "id": "1ae12da0-a42c-492c-9b3d-05635bbe7aec",
+      "id": "26c5c79a-4fa9-46d4-86ab-33dee2860b8b",
       "name": "Box_9",
       "active": true,
       "components": {
@@ -599,7 +612,7 @@
       "children": []
     },
     {
-      "id": "ef165e84-e1e6-456d-b636-6955745fb5f9",
+      "id": "e9f5319b-6cdf-4eab-be4c-c9cc1a3bd6d0",
       "name": "Box_10",
       "active": true,
       "components": {
@@ -652,7 +665,7 @@
       "children": []
     },
     {
-      "id": "344980e4-4656-4ffe-90df-162697f02014",
+      "id": "619723a3-d588-4182-8865-cc26e41c2c9b",
       "name": "Box_11",
       "active": true,
       "components": {
@@ -705,7 +718,7 @@
       "children": []
     },
     {
-      "id": "65cebea4-1fff-4b41-81c9-3cc286b52561",
+      "id": "8c0a2cb6-bb85-412f-bfa9-8521cbfd6c2e",
       "name": "Box_12",
       "active": true,
       "components": {
@@ -758,7 +771,7 @@
       "children": []
     },
     {
-      "id": "6f164007-ab53-4b26-9290-2c502c3b6e89",
+      "id": "c5d8df33-38dc-4100-95c4-10f805f65a20",
       "name": "Box_13",
       "active": true,
       "components": {
@@ -811,7 +824,7 @@
       "children": []
     },
     {
-      "id": "caaa35af-76d6-49e8-a57f-8f1a10966a4b",
+      "id": "70e79ef4-b4bb-479c-8289-16098acca987",
       "name": "Box_14",
       "active": true,
       "components": {
@@ -864,12 +877,11 @@
       "children": []
     }
   ],
-  "prefabs": {},
   "settings": {
     "background_color": [
       20,
       20,
-      20,
+      30,
       255
     ]
   }

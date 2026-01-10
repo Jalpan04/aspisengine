@@ -1,9 +1,9 @@
 {
-  "id": "f99460b1-b1d2-4bc1-a82f-b369b96decd7",
+  "id": "b9cbe603-c599-4d68-97ef-341fef8abf53",
   "name": "Stress Test 4 - Friction Slopes",
   "objects": [
     {
-      "id": "d5a370b2-c9d2-4c1c-bdb1-a41b52d1e1ab",
+      "id": "753c39e2-bc00-4328-b70d-216b90af6822",
       "name": "Main Camera",
       "active": true,
       "components": {
@@ -29,7 +29,7 @@
       "children": []
     },
     {
-      "id": "5d3a5a9c-34b7-42be-8d1c-459363a42ab3",
+      "id": "87d154f3-5c7b-44f0-a903-b994e1d8b612",
       "name": "Ramp_0.0",
       "active": true,
       "components": {
@@ -56,6 +56,18 @@
           ],
           "is_trigger": false
         },
+        "RigidBody": {
+          "mass": 0,
+          "drag": 0.05,
+          "use_gravity": false,
+          "restitution": 0.5,
+          "friction": 0.0,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
         "Background": {
           "color": [
             100,
@@ -70,7 +82,7 @@
       "children": []
     },
     {
-      "id": "191b95ba-4660-4b99-96b6-1c0a4b765b59",
+      "id": "468129be-409b-4d84-848c-647deb25b96b",
       "name": "Slider_0.0",
       "active": true,
       "components": {
@@ -123,7 +135,7 @@
       "children": []
     },
     {
-      "id": "2c2263a7-9c14-48dd-b158-185252eb4fed",
+      "id": "9ef0f35b-fb9c-4ded-a9c5-24442c333415",
       "name": "Ramp_0.5",
       "active": true,
       "components": {
@@ -150,6 +162,18 @@
           ],
           "is_trigger": false
         },
+        "RigidBody": {
+          "mass": 0,
+          "drag": 0.05,
+          "use_gravity": false,
+          "restitution": 0.5,
+          "friction": 0.5,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
         "Background": {
           "color": [
             100,
@@ -164,7 +188,7 @@
       "children": []
     },
     {
-      "id": "8ccaaea8-dd51-4258-bb2e-d1a924aec98a",
+      "id": "f1cc37bf-920d-4878-b317-01b228cb09e4",
       "name": "Slider_0.5",
       "active": true,
       "components": {
@@ -217,7 +241,7 @@
       "children": []
     },
     {
-      "id": "833a5878-01b4-4477-a3b1-aa0c5f864bf5",
+      "id": "6a714603-5608-4fd1-b613-f83889fb09ed",
       "name": "Ramp_1.0",
       "active": true,
       "components": {
@@ -244,6 +268,18 @@
           ],
           "is_trigger": false
         },
+        "RigidBody": {
+          "mass": 0,
+          "drag": 0.05,
+          "use_gravity": false,
+          "restitution": 0.5,
+          "friction": 1.0,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
         "Background": {
           "color": [
             100,
@@ -258,7 +294,7 @@
       "children": []
     },
     {
-      "id": "496e82c8-bbd0-4c02-bf62-c67373d6818b",
+      "id": "04453dfe-9aab-4469-9526-66f0bb45b693",
       "name": "Slider_1.0",
       "active": true,
       "components": {

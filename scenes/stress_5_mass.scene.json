@@ -1,9 +1,9 @@
 {
-  "id": "2b4ee3a8-cd8c-40c4-ab68-e70d89fbd367",
+  "id": "8bcc8d22-f062-4513-a761-378de18818a5",
   "name": "Stress Test 5 - Mass Mayhem",
   "objects": [
     {
-      "id": "5def8fcd-d70f-44f0-8997-1ecdb5d8c135",
+      "id": "e7eb1a50-9cea-4cfc-9ab8-1d1ba6cc3d5d",
       "name": "Main Camera",
       "active": true,
       "components": {
@@ -29,7 +29,7 @@
       "children": []
     },
     {
-      "id": "539d7edd-4a47-4f55-ba35-f629cc12396e",
+      "id": "ed66686a-6ae9-4bf4-9a84-d6a2c2487648",
       "name": "Ground",
       "active": true,
       "components": {
@@ -56,6 +56,18 @@
           ],
           "is_trigger": false
         },
+        "RigidBody": {
+          "mass": 0,
+          "drag": 0.05,
+          "use_gravity": false,
+          "restitution": 0.1,
+          "friction": 0.5,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
         "Background": {
           "color": [
             100,
@@ -70,7 +82,7 @@
       "children": []
     },
     {
-      "id": "cf81c4f5-a386-4bb5-8051-edcf5c027746",
+      "id": "03da961c-9315-410f-a41e-6b55229ab828",
       "name": "Heavy",
       "active": true,
       "components": {
@@ -123,7 +135,7 @@
       "children": []
     },
     {
-      "id": "38c89aea-939d-464c-9783-a36024a2cad6",
+      "id": "67866647-0ed5-4d65-a24d-002b70f94770",
       "name": "Light",
       "active": true,
       "components": {

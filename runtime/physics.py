@@ -144,16 +144,17 @@ class PhysicsSystem:
             mass = rb_data.get("mass", 1.0)
             use_gravity = rb_data.get("use_gravity", True)
             drag = rb_data.get("drag", 0.0)
-            restitution = rb_data.get("restitution", 0.0) # Read restitution
+            restitution = rb_data.get("restitution", 0.0)
             friction = rb_data.get("friction", 0.5)
             initial_velocity = rb_data.get("velocity", [0.0, 0.0])
             fixed_rotation = rb_data.get("fixed_rotation", False)
-            body_type = pymunk.Body.DYNAMIC
+            # Mass 0 means Static in our engine convention
+            body_type = pymunk.Body.DYNAMIC if mass > 0 else pymunk.Body.STATIC
         else:
             mass = 0
             use_gravity = False
-            restitution = 0.0 # Default for simple static?
-            friction = 0.5 # Default friction for static
+            restitution = 0.5 # Default to 0.5 (more realistic fallback)
+            friction = 0.5
             fixed_rotation = False
             body_type = pymunk.Body.STATIC
             

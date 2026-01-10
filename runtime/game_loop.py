@@ -76,7 +76,7 @@ class GameRuntime:
 
 
     def run(self):
-        FIXED_DT = 1.0 / 60.0 # 60 Hz fixed logic update
+        FIXED_DT = 1.0 / 120.0 # 120 Hz fixed logic update (Sub-stepping)
         accumulator = 0.0
         
         while self.running:
