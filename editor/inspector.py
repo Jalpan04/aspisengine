@@ -32,7 +32,7 @@ class FloatField(QLineEdit):
                 border: 1px solid #555555;
             }
         """)
-        self.setText(str(value))
+        self.setText(f"{value:.2f}")
         self.textChanged.connect(self._on_text_changed)
         self.editingFinished.connect(self._on_editing_finished)
         self._last_committed_value = value
@@ -70,9 +70,8 @@ class FloatField(QLineEdit):
             if self.min_val is not None: val = max(self.min_val, val)
             if self.max_val is not None: val = min(self.max_val, val)
             
-            # Update text if clamped
-            if val != float(self.text()):
-                self.set_value(val)
+            # Use set_value to format text
+            self.set_value(val)
                 
             if val != self._last_committed_value:
                 old_val = self._last_committed_value
@@ -232,6 +231,7 @@ class InspectorPanel(QWidget):
         self.state = EditorState.instance()
         self.state.selection_changed.connect(self.on_selection_changed)
         self.state.scene_loaded.connect(self.refresh_values)
+        self.state.scene_updated.connect(self.refresh_values)
 
     def on_selection_changed(self, obj_id):
         self.clear_content() # Clears active_editors too
@@ -271,6 +271,15 @@ class InspectorPanel(QWidget):
             
         # Iterate over active editors and update their values
         for (comp_name, key), widget in self.active_editors.items():
+            # Skip update if user is currently typing in this widget
+            if widget.hasFocus():
+                continue
+                
+            # For Vec2Field, check its children focus
+            if isinstance(widget, Vec2Field):
+                 if widget.x_field.hasFocus() or widget.y_field.hasFocus():
+                     continue
+            
             if comp_name in obj.get("components", {}):
                 data = obj["components"][comp_name]
                 if key in data:
@@ -1066,7 +1075,7 @@ class InspectorPanel(QWidget):
         """Updates the component data directly without undo history (for live preview)."""
         if comp_name in obj.get("components", {}):
             obj["components"][comp_name][key] = value
-            self.state.scene_loaded.emit()
+            self.state.scene_updated.emit()
 
     def update_component(self, obj, comp_name, key, value, old_value=None):
         if comp_name in obj.get("components", {}):
@@ -1085,7 +1094,7 @@ class InspectorPanel(QWidget):
             # BUT: redo() sets obj[...] = value. If obj is already value, it does nothing harmful.
             cmd.redo()
             
-            self.state.scene_loaded.emit()
+            self.state.scene_updated.emit()
 
     def show_add_menu(self, obj, available, button):
         from PySide6.QtWidgets import QMenu

@@ -26,6 +26,7 @@ class SceneCanvas(QWidget):
         
         self.state = EditorState.instance()
         self.state.scene_loaded.connect(self.update)
+        self.state.scene_updated.connect(self.update)
         self.state.selection_changed.connect(lambda _: self.update())
         
         # View
@@ -41,6 +42,7 @@ class SceneCanvas(QWidget):
         self.drag_obj_start_pos = [0, 0] # Store as list to be mutable if needed
         self.drag_rot_start = 0
         self.drag_scale_start = [1, 1]
+        self.drag_zoom_start = 1.0
         self.drag_obj_start_bounds = (0, 0) # w, h at start
         
         self.sprite_cache = {}
@@ -95,8 +97,27 @@ class SceneCanvas(QWidget):
             w = pixmap.width() * scale[0]
             h = pixmap.height() * scale[1]
         else:
-            w = 40 * scale[0]
-            h = 40 * scale[1]
+            # Fallback to BoxCollider if available
+            box = obj.get("components", {}).get("BoxCollider")
+            if box:
+                 bs = box.get("size", [50, 50])
+                 w = bs[0] * scale[0]
+                 h = bs[1] * scale[1]
+            else:
+                 # Check for Camera component
+                 cam = obj.get("components", {}).get("Camera")
+                 if cam:
+                     cw = cam.get("width", 800.0)
+                     ch = cam.get("height", 600.0)
+                     cz = cam.get("zoom", 1.0)
+                     if cz <= 0.001: cz = 1.0
+                     # Camera viewport size in world space
+                     w = (cw / cz) # We ignore object scale for camera viewport as runtime does
+                     h = (ch / cz)
+                 else:
+                     # Standard Fallback
+                     w = 40 * scale[0]
+                     h = 40 * scale[1]
         
         return pos[0], pos[1], w, h, rotation
 
@@ -311,23 +332,75 @@ class SceneCanvas(QWidget):
         if camera_data:
             cw = camera_data.get("width", 800.0)
             ch = camera_data.get("height", 600.0)
+            zoom = camera_data.get("zoom", 1.0)
+            if zoom <= 0.001: zoom = 1.0
+            
+            # The yellow box represents the WORLD AREA visible in the camera.
+            # If Zoom > 1 (Zoom In), we see LESS world (Box shrinks).
+            # If Zoom < 1 (Zoom Out), we see MORE world (Box grows).
+            world_w = cw / zoom
+            world_h = ch / zoom
             
             painter.setPen(QColor(255, 255, 0)) # Yellow
             painter.setBrush(Qt.NoBrush)
-            painter.drawRect(QRectF(-cw/2, -ch/2, cw, ch))
+            painter.drawRect(QRectF(-world_w/2, -world_h/2, world_w, world_h))
             
             # Label
             scale_factor = 1.0 / self.zoom if self.zoom else 1.0
             painter.save()
             painter.scale(scale_factor, scale_factor)
             painter.setPen(QColor(255, 255, 0))
-            painter.drawText(QRectF(-cw/2/scale_factor, -ch/2/scale_factor - 20, 100, 20), Qt.AlignLeft, "Camera")
+            # Adjust label position to top-left of the scaled box
+            label_x = -world_w/2 / scale_factor
+            label_y = (-world_h/2 / scale_factor) - 20
+            painter.drawText(QRectF(label_x, label_y, 100, 20), Qt.AlignLeft, f"Camera ({int(cw)}x{int(ch)})")
             painter.restore()
 
         # Draw Selection Handles (in rotated local space)
         if is_selected:
             self.draw_handles_local(painter, w, h)
             
+        # --- Draw Collider Gizmos (Green) ---
+        # Draw BoxCollider
+        box = obj.get("components", {}).get("BoxCollider")
+        if box:
+            size_w, size_h = box.get("size", [50, 50])
+            off_x, off_y = box.get("offset", [0, 0])
+            
+            # Apply Object Scale to Collider Size
+            cw = size_w * scale[0]
+            ch = size_h * scale[1]
+            
+            # Apply Object Scale to Offset? Usually yes.
+            cox = off_x * scale[0]
+            coy = off_y * scale[1]
+            
+            collider_rect = QRectF(cox - cw/2, coy - ch/2, cw, ch)
+            
+            pen = QPen(QColor(0, 255, 0), 2 / self.zoom) # Green
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(collider_rect)
+            
+        # Draw CircleCollider
+        circle = obj.get("components", {}).get("CircleCollider")
+        if circle:
+            radius = circle.get("radius", 25.0)
+            off_x, off_y = circle.get("offset", [0, 0])
+            
+            # Scale radius? Max of scale axes usually
+            # Pymunk/Box2D: Circle scaling is uniform or max.
+            # Let's use max(abs(scale[0]), abs(scale[1]))
+            s_radius = radius * max(abs(scale[0]), abs(scale[1]))
+             
+            cox = off_x * scale[0]
+            coy = off_y * scale[1]
+            
+            pen = QPen(QColor(0, 255, 0), 2 / self.zoom)
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawEllipse(QPointF(cox, coy), s_radius, s_radius)
+
         painter.restore()
 
     def draw_handles_local(self, painter, w, h):
@@ -432,6 +505,12 @@ class SceneCanvas(QWidget):
                         self.drag_rot_start = transform.get("rotation", 0)
                         self.drag_scale_start = list(transform.get("scale", [1, 1]))
                         
+                        cam = obj.get("components", {}).get("Camera")
+                        if cam:
+                            self.drag_zoom_start = cam.get("zoom", 1.0)
+                        else:
+                            self.drag_zoom_start = 1.0
+                        
                         _, _, w, h, _ = self.get_obj_geometry(obj)
                         self.drag_obj_start_bounds = (w, h)
                         return
@@ -510,9 +589,21 @@ class SceneCanvas(QWidget):
                     nsx = max(0.01, min(1000.0, nsx))
                     nsy = max(0.01, min(1000.0, nsy))
                     
-                    cmd = ChangeComponentCommand(obj, "Transform", "scale", [nsx, nsy])
-                    self.state.undo_stack.push(cmd)
-                    cmd.redo()
+                    cam_data = obj.get("components", {}).get("Camera")
+                    if cam_data:
+                        # Map visual scale factor to Zoom
+                        # Bigger Box = Lower Zoom (Zoom Out)
+                        # Zoom_New = Zoom_Old / factor
+                        if factor > 0.001:
+                            new_zoom = self.drag_zoom_start / factor
+                            new_zoom = max(0.01, min(100.0, new_zoom))
+                            cmd = ChangeComponentCommand(obj, "Camera", "zoom", new_zoom)
+                            self.state.undo_stack.push(cmd)
+                            cmd.redo()
+                    else:
+                        cmd = ChangeComponentCommand(obj, "Transform", "scale", [nsx, nsy])
+                        self.state.undo_stack.push(cmd)
+                        cmd.redo()
 
             elif self.active_handle == self.HANDLE_ROTATE:
                 cx, cy = self.drag_obj_start_pos
@@ -533,7 +624,7 @@ class SceneCanvas(QWidget):
                 self.state.undo_stack.push(cmd)
                 cmd.redo()
             
-            self.state.scene_loaded.emit()
+            self.state.scene_updated.emit()
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -578,6 +669,7 @@ class SceneCanvas(QWidget):
         # Sort Descending (Highest First)
         sorted_objs = sorted(scene.objects, key=get_layer, reverse=True)
 
+        camera_hits = []
         for obj in sorted_objs:
             if not obj.get("active", True): continue
             
@@ -589,7 +681,15 @@ class SceneCanvas(QWidget):
             dy = abs(ly - cy)
             
             if dx <= w/2 and dy <= h/2:
+                # If it's a camera, we save it as a low-priority hit
+                if "Camera" in obj.get("components", {}):
+                    camera_hits.append(obj)
+                    continue
                 return obj
+        
+        # Only return a camera if nothing else was hit
+        if camera_hits:
+            return camera_hits[0]
         return None
 
     def keyPressEvent(self, event):

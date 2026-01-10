@@ -363,6 +363,9 @@ class GameRuntime:
                 
                 if "CircleCollider" in comps:
                     go.components["CircleCollider"] = comps["CircleCollider"]
+                
+                if "Camera" in comps:
+                    go.components["Camera"] = comps["Camera"]
 
                 self.objects.append(go)
 
@@ -450,6 +453,7 @@ class GameRuntime:
             screen_w = int(camera_comp.get("width", 800))
             screen_h = int(camera_comp.get("height", 600))
             zoom = float(camera_comp.get("zoom", 1.0))
+            if zoom <= 0.001: zoom = 1.0 # Safety check
             cam_x, cam_y = camera_obj.world_position[0], camera_obj.world_position[1]
         
         # Resize window if needed

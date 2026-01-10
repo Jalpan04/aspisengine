@@ -1,0 +1,294 @@
+{
+  "id": "3a77e06b-ebb1-40ab-aa7e-7006cd0eac53",
+  "name": "Stress Test 3 - Tunneling",
+  "objects": [
+    {
+      "id": "3bd7e165-33d8-4b7e-a4ea-71c383057d20",
+      "name": "Main Camera",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ],
+          "parent_id": null
+        },
+        "Camera": {
+          "width": 800,
+          "height": 600,
+          "zoom": 0.6,
+          "is_main": true
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "149c7fcf-137a-4e4a-af84-11794ad9615d",
+      "name": "Wall_0",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            200,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.1,
+            2
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            10,
+            200
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "Background": {
+          "color": [
+            200,
+            200,
+            200,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "e4a2183b-b275-46fb-8f41-31a4260c31b5",
+      "name": "Wall_1",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            300,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.1,
+            2
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            10,
+            200
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "Background": {
+          "color": [
+            200,
+            200,
+            200,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "c9eb0651-d17a-417b-8187-f2daf7807e4c",
+      "name": "Wall_2",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.1,
+            2
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            10,
+            200
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "Background": {
+          "color": [
+            200,
+            200,
+            200,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "1d12029a-daf8-4acc-993b-c8ea79b752d0",
+      "name": "Wall_3",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            500,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.1,
+            2
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            10,
+            200
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "Background": {
+          "color": [
+            200,
+            200,
+            200,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "cb1e12cd-631f-456c-a46b-bfa276d1b19d",
+      "name": "Wall_4",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            600,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.1,
+            2
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            10,
+            200
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "Background": {
+          "color": [
+            200,
+            200,
+            200,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "60e0439a-90bf-442c-bb90-341c0f873458",
+      "name": "Bullet",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -300,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.2,
+            0.2
+          ],
+          "parent_id": null
+        },
+        "CircleCollider": {
+          "radius": 10,
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "RigidBody": {
+          "mass": 0.1,
+          "drag": 0.05,
+          "use_gravity": true,
+          "restitution": 0.5,
+          "friction": 0.5,
+          "fixed_rotation": false,
+          "velocity": [
+            2000,
+            0
+          ]
+        },
+        "Background": {
+          "color": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    }
+  ],
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      30,
+      255
+    ]
+  }
+}

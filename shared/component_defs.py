@@ -36,6 +36,7 @@ class RigidBody:
     drag: float = 0.0
     use_gravity: bool = True
     restitution: float = 0.5
+    friction: float = 0.5
     fixed_rotation: bool = False
     velocity: Tuple[float, float] = (0.0, 0.0) # Runtime only
 

@@ -1,0 +1,322 @@
+{
+  "id": "f99460b1-b1d2-4bc1-a82f-b369b96decd7",
+  "name": "Stress Test 4 - Friction Slopes",
+  "objects": [
+    {
+      "id": "d5a370b2-c9d2-4c1c-bdb1-a41b52d1e1ab",
+      "name": "Main Camera",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -150,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ],
+          "parent_id": null
+        },
+        "Camera": {
+          "width": 800,
+          "height": 600,
+          "zoom": 0.8,
+          "is_main": true
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "5d3a5a9c-34b7-42be-8d1c-459363a42ab3",
+      "name": "Ramp_0.0",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -100,
+            -150
+          ],
+          "rotation": 25,
+          "scale": [
+            3,
+            0.2
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            300,
+            20
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "Background": {
+          "color": [
+            100,
+            100,
+            200,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "191b95ba-4660-4b99-96b6-1c0a4b765b59",
+      "name": "Slider_0.0",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -200,
+            -250
+          ],
+          "rotation": 0,
+          "scale": [
+            0.3,
+            0.3
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            30,
+            30
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "RigidBody": {
+          "mass": 1.0,
+          "drag": 0.05,
+          "use_gravity": true,
+          "restitution": 0.5,
+          "friction": 0.0,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
+        "Background": {
+          "color": [
+            255,
+            255,
+            0,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "2c2263a7-9c14-48dd-b158-185252eb4fed",
+      "name": "Ramp_0.5",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -100,
+            0
+          ],
+          "rotation": 25,
+          "scale": [
+            3,
+            0.2
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            300,
+            20
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "Background": {
+          "color": [
+            100,
+            100,
+            200,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "8ccaaea8-dd51-4258-bb2e-d1a924aec98a",
+      "name": "Slider_0.5",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -200,
+            -100
+          ],
+          "rotation": 0,
+          "scale": [
+            0.3,
+            0.3
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            30,
+            30
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "RigidBody": {
+          "mass": 1.0,
+          "drag": 0.05,
+          "use_gravity": true,
+          "restitution": 0.5,
+          "friction": 0.5,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
+        "Background": {
+          "color": [
+            255,
+            255,
+            0,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "833a5878-01b4-4477-a3b1-aa0c5f864bf5",
+      "name": "Ramp_1.0",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -100,
+            150
+          ],
+          "rotation": 25,
+          "scale": [
+            3,
+            0.2
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            300,
+            20
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "Background": {
+          "color": [
+            100,
+            100,
+            200,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "496e82c8-bbd0-4c02-bf62-c67373d6818b",
+      "name": "Slider_1.0",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -200,
+            50
+          ],
+          "rotation": 0,
+          "scale": [
+            0.3,
+            0.3
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            30,
+            30
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "RigidBody": {
+          "mass": 1.0,
+          "drag": 0.05,
+          "use_gravity": true,
+          "restitution": 0.5,
+          "friction": 1.0,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
+        "Background": {
+          "color": [
+            255,
+            255,
+            0,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    }
+  ],
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      30,
+      255
+    ]
+  }
+}

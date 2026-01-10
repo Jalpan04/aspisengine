@@ -1,3 +1,4 @@
+import copy
 from abc import ABC, abstractmethod
 from dataclasses import asdict
 
@@ -59,12 +60,14 @@ class UndoStack:
 class CreateObjectCommand(Command):
     def __init__(self, scene, obj_data, index=None):
         self.scene = scene
-        self.obj_data = obj_data
+        # Deepcopy to ensure the template is isolated from future edits
+        self.obj_data = copy.deepcopy(obj_data)
         self.index = index
         self.created_obj = None
 
     def redo(self):
-        self.created_obj = self.obj_data.copy()
+        # Create a FRESH copy each time to ensure isolation
+        self.created_obj = copy.deepcopy(self.obj_data)
         if self.index is not None:
             self.scene.objects.insert(self.index, self.created_obj)
         else:
@@ -96,33 +99,44 @@ class DeleteObjectCommand(Command):
                     to_check.append(obj.get("id"))
         
         # 2. Store them with their original indices
-        # We iterate backwards so popping by index doesn't shift later indices? 
-        # Actually simplest to store them and just re-append on Undo?
-        # Preserving index is nice but preserving hierarchy is critical.
-        # If we re-append, do IDs change? No.
-        # If we re-append at end, order changes.
-        # Let's try to preserve indices.
         
         # Find all objects to delete
         for i, obj in enumerate(self.scene.objects):
             if obj.get("id") in ids_to_delete:
-                self.objects_to_delete.append((i, obj))
+                # DEEPCOPY to save state exactly as it was at deletion time
+                self.objects_to_delete.append((i, copy.deepcopy(obj)))
         
         # Sort by index descending so we can pop without invalidating lower indices
         self.objects_to_delete.sort(key=lambda x: x[0], reverse=True)
 
     def redo(self):
         # Delete from highest index to lowest
-        for index, _ in self.objects_to_delete:
+        # We need to find objects by ID or assume index integrity?
+        # If other commands ran, indices might shift. 
+        # But Undo/Redo is linear.
+        # Wait, if I undo Delete, then I add valid commands, Redo Stack is cleared.
+        # So indices should match unless I have a bug.
+        for index, obj_snap in self.objects_to_delete:
+            # We search for the object with matching ID at the expected index or nearby?
+            # Or just blindly pop index? Safest for simple lists.
+            # But if we assume linear history:
             if 0 <= index < len(self.scene.objects):
-                self.scene.objects.pop(index)
+                 # Verify ID match if possible?
+                 if self.scene.objects[index]["id"] == obj_snap["id"]:
+                     self.scene.objects.pop(index)
+                 else:
+                     # Fallback: search by ID
+                     for j, o in enumerate(self.scene.objects):
+                         if o["id"] == obj_snap["id"]:
+                             self.scene.objects.pop(j)
+                             break
 
     def undo(self):
         # Restore in original order (ascending index)
-        # We sorted them descending for delete, so reverse back
         to_restore = sorted(self.objects_to_delete, key=lambda x: x[0])
-        for index, obj in to_restore:
-            self.scene.objects.insert(index, obj)
+        for index, obj_snap in to_restore:
+            # Insert a COPY to ensure multiple undo/redos don't link states
+            self.scene.objects.insert(index, copy.deepcopy(obj_snap))
 
 class RenameObjectCommand(Command):
     def __init__(self, obj, new_name):
@@ -141,14 +155,22 @@ class ChangeComponentCommand(Command):
         self.obj = obj
         self.comp_name = comp_name
         self.key = key
-        self.new_value = new_value
-        self.old_value = obj["components"][comp_name].get(key)
+        # DEEPCOPY values to prevent reference pollution
+        self.new_value = copy.deepcopy(new_value)
+        
+        val = obj["components"][comp_name].get(key)
+        self.old_value = copy.deepcopy(val)
 
     def redo(self):
-        self.obj["components"][self.comp_name][self.key] = self.new_value
+        # Deepcopy on assignment too? 
+        # Usually self.new_value is isolated enough, but inserting it into obj
+        # means obj holds ref to it.
+        # If obj modifies it, self.new_value is modified?
+        # YES. So we must put deepcopy(self.new_value) into obj.
+        self.obj["components"][self.comp_name][self.key] = copy.deepcopy(self.new_value)
 
     def undo(self):
-        self.obj["components"][self.comp_name][self.key] = self.old_value
+        self.obj["components"][self.comp_name][self.key] = copy.deepcopy(self.old_value)
 
     def merge_with(self, other) -> bool:
         if not isinstance(other, ChangeComponentCommand):
@@ -160,7 +182,7 @@ class ChangeComponentCommand(Command):
             self.key == other.key):
             
             # Merge: Keep MY old_value (start of drag) and take THEIR new_value (current drag pos)
-            self.new_value = other.new_value
+            self.new_value = copy.deepcopy(other.new_value)
             return True
             
         return False
@@ -169,19 +191,21 @@ class AddComponentCommand(Command):
     def __init__(self, obj, comp_name, data):
         self.obj = obj
         self.comp_name = comp_name
-        self.data = data
+        self.data = copy.deepcopy(data)
 
     def redo(self):
-        self.obj["components"][self.comp_name] = self.data
+        self.obj["components"][self.comp_name] = copy.deepcopy(self.data)
 
     def undo(self):
-        del self.obj["components"][self.comp_name]
+        if self.comp_name in self.obj["components"]:
+            del self.obj["components"][self.comp_name]
 
 class RemoveComponentCommand(Command):
     def __init__(self, obj, comp_name):
         self.obj = obj
         self.comp_name = comp_name
-        self.old_data = obj["components"].get(comp_name)
+        data = obj["components"].get(comp_name)
+        self.old_data = copy.deepcopy(data)
 
     def redo(self):
         if self.comp_name in self.obj["components"]:
@@ -189,7 +213,7 @@ class RemoveComponentCommand(Command):
 
     def undo(self):
         if self.old_data:
-            self.obj["components"][self.comp_name] = self.old_data
+            self.obj["components"][self.comp_name] = copy.deepcopy(self.old_data)
 
 class ReparentCommand(Command):
     def __init__(self, scene, obj_data, new_parent_id):
@@ -205,9 +229,6 @@ class ReparentCommand(Command):
     
     def redo(self):
         self.obj_data["components"]["Transform"]["parent_id"] = self.new_parent_id
-        
-        # Trigger global refresh via EditorState signal if possible?
-        # Command usually just modifies data. The Caller (Inspector/Hierarchy) triggers refresh.
         
     def undo(self):
         self.obj_data["components"]["Transform"]["parent_id"] = self.old_parent_id

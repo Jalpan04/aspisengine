@@ -242,8 +242,8 @@
       "components": {
         "Transform": {
           "position": [
-            0,
-            -290
+            0.0,
+            -310.0
           ],
           "rotation": 0,
           "scale": [
@@ -288,8 +288,8 @@
       "components": {
         "Transform": {
           "position": [
-            0,
-            290
+            0.0,
+            310.0
           ],
           "rotation": 0,
           "scale": [
@@ -334,8 +334,8 @@
       "components": {
         "Transform": {
           "position": [
-            -392.0,
-            -1.3333333333333428
+            -410.0,
+            0.0
           ],
           "rotation": 0,
           "scale": [
@@ -348,9 +348,9 @@
           "layer": 0,
           "visible": true,
           "tint": [
-            44,
-            158,
-            76,
+            129,
+            129,
+            129,
             255
           ]
         },
@@ -439,10 +439,10 @@
         },
         "Background": {
           "color": [
-            116,
-            247,
-            243,
-            42
+            127,
+            0,
+            159,
+            255
           ],
           "fixed": true,
           "sprite_path": ""

@@ -14,6 +14,7 @@ class PhysicsSystem:
         
         # Collision Handler
         # Use add_collision_handler(0, 0) for default types (we set everything to type 0)
+        self.space.iterations = 60 # High stability for stacking
         try:
             # Try newer API first
             if hasattr(self.space, 'add_default_collision_handler'):
@@ -144,6 +145,7 @@ class PhysicsSystem:
             use_gravity = rb_data.get("use_gravity", True)
             drag = rb_data.get("drag", 0.0)
             restitution = rb_data.get("restitution", 0.0) # Read restitution
+            friction = rb_data.get("friction", 0.5)
             initial_velocity = rb_data.get("velocity", [0.0, 0.0])
             fixed_rotation = rb_data.get("fixed_rotation", False)
             body_type = pymunk.Body.DYNAMIC
@@ -151,6 +153,7 @@ class PhysicsSystem:
             mass = 0
             use_gravity = False
             restitution = 0.0 # Default for simple static?
+            friction = 0.5 # Default friction for static
             fixed_rotation = False
             body_type = pymunk.Body.STATIC
             
@@ -203,7 +206,7 @@ class PhysicsSystem:
             shape = pymunk.Poly(body, verts)
             shape.sensor = is_trigger
             shape.elasticity = restitution
-            shape.friction = 0.0
+            shape.friction = friction
             shape.filter = pymunk.ShapeFilter(categories=cat, mask=mask)
             shapes.append(shape)
 
@@ -222,7 +225,7 @@ class PhysicsSystem:
             shape = pymunk.Circle(body, radius, offset=(c_offset[0], c_offset[1]))
             shape.sensor = is_trigger
             shape.elasticity = restitution
-            shape.friction = 0.0
+            shape.friction = friction
             shape.filter = pymunk.ShapeFilter(categories=cat, mask=mask)
             shapes.append(shape)
             

@@ -1,0 +1,228 @@
+{
+  "id": "2eb41440-8b4f-4eed-894f-1d5d3d4e65ab",
+  "name": "Stress Test 2 - Bouncy House",
+  "objects": [
+    {
+      "id": "09876b02-7c54-48cf-a0df-ed5466861627",
+      "name": "Main Camera",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            0,
+            -100
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ],
+          "parent_id": null
+        },
+        "Camera": {
+          "width": 800,
+          "height": 600,
+          "zoom": 1.0,
+          "is_main": true
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "10638ae0-4d35-41a4-8412-12d05853ff36",
+      "name": "Ground",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            0,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            20,
+            0.5
+          ],
+          "parent_id": null
+        },
+        "BoxCollider": {
+          "size": [
+            2000,
+            50
+          ],
+          "offset": [
+            0,
+            0
+          ],
+          "is_trigger": false
+        },
+        "Background": {
+          "color": [
+            100,
+            100,
+            100,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "ed2074b3-9634-4c39-bacc-b13105d51fc9",
+      "name": "Ball_0.5",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            -100,
+            -200
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ],
+          "parent_id": null
+        },
+        "CircleCollider": {
+          "radius": 25,
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "RigidBody": {
+          "mass": 1.0,
+          "drag": 0.05,
+          "use_gravity": true,
+          "restitution": 0.5,
+          "friction": 0.5,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
+        "Background": {
+          "color": [
+            50,
+            200,
+            50,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "4ff609b1-9d10-49de-82f9-ee33c3b24cfb",
+      "name": "Ball_0.9",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            0,
+            -200
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ],
+          "parent_id": null
+        },
+        "CircleCollider": {
+          "radius": 25,
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "RigidBody": {
+          "mass": 1.0,
+          "drag": 0.05,
+          "use_gravity": true,
+          "restitution": 0.9,
+          "friction": 0.5,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
+        "Background": {
+          "color": [
+            50,
+            200,
+            50,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "85d6f91c-52f8-44df-8681-414bbf5f94d7",
+      "name": "Ball_1.2",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            100,
+            -200
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ],
+          "parent_id": null
+        },
+        "CircleCollider": {
+          "radius": 25,
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "RigidBody": {
+          "mass": 1.0,
+          "drag": 0.05,
+          "use_gravity": true,
+          "restitution": 1.2,
+          "friction": 0.5,
+          "fixed_rotation": false,
+          "velocity": [
+            0,
+            0
+          ]
+        },
+        "Background": {
+          "color": [
+            50,
+            200,
+            50,
+            255
+          ],
+          "fixed": false,
+          "layer": 0
+        }
+      },
+      "children": []
+    }
+  ],
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      30,
+      255
+    ]
+  }
+}

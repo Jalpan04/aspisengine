@@ -13,7 +13,8 @@ from .undo_redo import UndoStack
 
 class EditorState(QObject):
     # Signals
-    scene_loaded = Signal()
+    scene_loaded = Signal() # Structure changed (new scene, add/remove object)
+    scene_updated = Signal() # Data changed (property edit, transform)
     selection_changed = Signal(str) # object_id, empty if none
     
     _instance = None
