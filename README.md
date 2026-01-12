@@ -1,6 +1,6 @@
 # Aspis Engine
 
-![Logo](logo.png)
+<img src="logo.png" width="200" alt="Aspis Engine Logo">
 
 **A brutalist Python-based 2D game engine for rapid prototyping and development.**
 
