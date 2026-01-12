@@ -27,6 +27,11 @@ class EditorState(QObject):
         self.current_scene_path: Optional[str] = None
         self.project_root = os.getcwd()
 
+    def set_project_root(self, path: str):
+        self.project_root = path
+        # If we had signals for project change, emit them here
+        print(f"Project Root set to: {self.project_root}")
+
     @classmethod
     def instance(cls):
         if cls._instance is None:

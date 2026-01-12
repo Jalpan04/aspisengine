@@ -207,5 +207,13 @@
       }
     }
   ],
-  "prefabs": {}
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
 }

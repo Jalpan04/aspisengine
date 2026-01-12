@@ -7,13 +7,20 @@ import inspect
 import math
 
 # Add project root to path
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.append(PROJECT_ROOT)
+# Use shared path utility to locate root
+try:
+    from shared.paths import get_engine_root
+    PROJECT_ROOT = get_engine_root()
+except ImportError:
+    # Fallback if shared not in path yet (e.g. running directly)
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+if PROJECT_ROOT not in sys.path:
+    sys.path.append(PROJECT_ROOT)
 
 from shared.scene_schema import Scene
 from shared.scene_loader import load_scene
 from runtime.api import GameObject, Script, Input, Time
-
 from runtime.physics import PhysicsSystem
 
 class GameRuntime:
@@ -644,7 +651,8 @@ class GameRuntime:
 
         pygame.display.flip()
 
-if __name__ == "__main__":
+def run(scene_path):
+    """Entry point for the Game Runtime"""
     # DPI Awareness for Windows
     if sys.platform == "win32":
         try:
@@ -652,17 +660,21 @@ if __name__ == "__main__":
             ctypes.windll.user32.SetProcessDPIAware()
         except:
             pass
+    
+    try:
+        runtime = GameRuntime(scene_path)
+        runtime.run()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"\nCRITICAL ERROR: Runtime crashed - {e}")
+        input("Press Enter to close window...")
 
+if __name__ == "__main__":
+    # DPI Awareness for Windows
     if len(sys.argv) > 1:
-        scene_file = sys.argv[1]
-        try:
-            game = GameRuntime(scene_file)
-            game.run()
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            print("\nCRITICAL ERROR: Runtime crashed.")
-            input("Press Enter to close window...")
+        run(sys.argv[1])
     else:
-        print("Usage: python runtime/game_loop.py <path_to_scene_json>")
+        # Default for testing
+        print("No scene provided. Please provide a scene path or run from main.py.")
         input("Press Enter to close...")

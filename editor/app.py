@@ -1,7 +1,7 @@
 import sys
 import os
 import subprocess
-from PySide6.QtWidgets import QApplication, QMainWindow, QDockWidget, QMenu, QMenuBar, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QMainWindow, QDockWidget, QMenu, QMenuBar, QFileDialog, QMessageBox, QDialog
 from PySide6.QtCore import Qt
 
 # Ensure correct path
@@ -11,7 +11,9 @@ from editor.editor_state import EditorState
 from editor.canvas import SceneCanvas
 from editor.hierarchy import HierarchyPanel
 from editor.inspector import InspectorPanel
+from editor.inspector import InspectorPanel
 from editor.asset_browser import AssetBrowser
+from editor.project_manager import ProjectManager
 from shared.scene_schema import Scene
 from shared.scene_loader import save_scene, load_scene
 from dataclasses import asdict
@@ -101,6 +103,9 @@ class MainWindow(QMainWindow):
         
         # File Menu
         file_menu = menu_bar.addMenu("File")
+        
+        file_menu.addAction("Switch Project...").triggered.connect(self.switch_project)
+        file_menu.addSeparator()
         
         new_action = file_menu.addAction("New Scene")
         new_action.triggered.connect(self.new_scene)
@@ -249,11 +254,28 @@ class MainWindow(QMainWindow):
         if self.state.current_scene_path:
             self._do_save(self.state.current_scene_path)
             
-            # Launch runtime
-            cmd = [sys.executable, "runtime/game_loop.py", self.state.current_scene_path]
+            # Launch runtime logic
+            # If Frozen (EXE), we run ourself with --run-scene
+            # If Dev (Python), we run main.py with --run-scene
+            
+            from shared.paths import get_engine_root
+            engine_root = get_engine_root()
+            
+            # Environment setup
+            env = os.environ.copy()
+            env["PYTHONPATH"] = engine_root + os.pathsep + env.get("PYTHONPATH", "")
+            
+            if getattr(sys, 'frozen', False):
+                # We are running as an EXE
+                cmd = [sys.executable, "--run-scene", self.state.current_scene_path]
+            else:
+                # We are running as code
+                main_py = os.path.join(engine_root, "main.py")
+                cmd = [sys.executable, main_py, "--run-scene", self.state.current_scene_path]
+
             try:
-                # Reverting console hide to debug "nothing happened"
-                subprocess.Popen(cmd, cwd=self.state.project_root)
+                # CWD is Project Root so assets load relative to it
+                subprocess.Popen(cmd, cwd=self.state.project_root, env=env)
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to launch runtime:\n{e}")
         else:
@@ -447,8 +469,68 @@ class MainWindow(QMainWindow):
             }
         """)
 
-if __name__ == "__main__":
+    def switch_project(self):
+        # Open Project Manager
+        manager = ProjectManager()
+        if manager.exec() == QDialog.Accepted:
+            new_path = manager.selected_project_path
+            if new_path and os.path.exists(new_path):
+                self.reload_project(new_path)
+    
+    def reload_project(self, project_path):
+        # 1. Update State
+        self.state.set_project_root(project_path)
+        self.state.current_scene_path = None
+        self.setWindowTitle("Aspis Engine Editor")
+        
+        # 2. Reload Asset Browser
+        # We need to recreate or reset the asset browser model
+        # The easiest way is to remove the old dock widget and adding a new one, 
+        # or implementing a set_root method in AssetBrowser.
+        # AssetBrowser already has set_root(path) but it only sets root index, 
+        # let's make sure it updates everything.
+        
+        # Access the AssetBrowser widget inside the dock
+        asset_browser = self.dock_assets.widget()
+        # We need to implement a full reset method in AssetBrowser or just hack it:
+        # Actually I can just replace the widget content
+        new_browser = AssetBrowser(project_path)
+        new_browser.file_opened.connect(self.open_script)
+        self.dock_assets.setWidget(new_browser)
+        
+        # 3. Load Empty Scene
+        self.state.load_scene(Scene.create_empty("Untitled Scene"))
+        
+        # 4. Clear/Reset other panels if needed
+        # Hierarchy/Inspector listen to signals, so they should auto-clear on load_scene
+        
+        QMessageBox.information(self, "Project Loaded", f"Switched to project:\n{project_path}")
+
+def run(project_path=None):
     app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
+    
+    # 1. Check if Project Path is provided (CLI arg)
+    if not project_path and len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
+        candidate = sys.argv[1]
+        if os.path.exists(candidate) and os.path.isdir(candidate):
+            project_path = candidate
+
+    # 2. If no project, Show Project Manager
+    if not project_path:
+        manager = ProjectManager()
+        if manager.exec() != QDialog.Accepted:
+            sys.exit(0) # User cancelled
+        project_path = manager.selected_project_path
+    
+    # 3. Launch Main Window
+    if project_path and os.path.exists(project_path):
+        # Update Global State BEFORE MainWindow is created
+        EditorState.instance().set_project_root(project_path)
+        window = MainWindow()
+        window.show()
+        sys.exit(app.exec())
+    else:
+        sys.exit(0)
+            
+if __name__ == "__main__":
+    run()

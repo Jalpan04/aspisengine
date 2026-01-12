@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Aspis Engine - A brutalist Python-based 2D game engine for rapid prototyping"
+    />
+    <title>Aspis Engine - Brutalist 2D Game Engine</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #121212;
+        color: #e0e0e0;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      header {
+        background-color: #1e1e1e;
+        border-bottom: 2px solid #5e9ea3;
+        padding: 40px 0;
+        text-align: center;
+      }
+
+      .logo {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 20px;
+      }
+
+      h1 {
+        font-size: 48px;
+        color: #5e9ea3;
+        margin-bottom: 10px;
+        letter-spacing: 2px;
+      }
+
+      .tagline {
+        font-size: 18px;
+        color: #999;
+        margin-bottom: 30px;
+      }
+
+      .cta-buttons {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 15px 40px;
+        font-size: 16px;
+        font-weight: bold;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .btn-primary {
+        background-color: #5e9ea3;
+        color: #121212;
+      }
+
+      .btn-primary:hover {
+        background-color: #6fbcc2;
+        transform: translateY(-2px);
+      }
+
+      .btn-secondary {
+        background-color: transparent;
+        color: #e0e0e0;
+        border: 2px solid #5e9ea3;
+      }
+
+      .btn-secondary:hover {
+        background-color: #5e9ea3;
+        color: #121212;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin: 60px 0;
+      }
+
+      .feature-card {
+        background-color: #1e1e1e;
+        padding: 30px;
+        border: 1px solid #333;
+        transition: border-color 0.3s;
+      }
+
+      .feature-card:hover {
+        border-color: #5e9ea3;
+      }
+
+      .feature-card h3 {
+        color: #5e9ea3;
+        margin-bottom: 15px;
+        font-size: 24px;
+      }
+
+      .feature-card ul {
+        list-style: none;
+        padding-left: 0;
+      }
+
+      .feature-card li:before {
+        content: "▸ ";
+        color: #5e9ea3;
+        font-weight: bold;
+      }
+
+      .feature-card li {
+        margin-bottom: 8px;
+      }
+
+      .screenshot-section {
+        background-color: #1e1e1e;
+        padding: 60px 20px;
+        text-align: center;
+        margin: 60px 0;
+      }
+
+      .screenshot-section h2 {
+        color: #5e9ea3;
+        margin-bottom: 30px;
+        font-size: 36px;
+      }
+
+      .stats {
+        display: flex;
+        justify-content: center;
+        gap: 60px;
+        flex-wrap: wrap;
+        margin: 60px 0;
+      }
+
+      .stat {
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 48px;
+        font-weight: bold;
+        color: #5e9ea3;
+        display: block;
+      }
+
+      .stat-label {
+        color: #999;
+        text-transform: uppercase;
+        font-size: 14px;
+        letter-spacing: 2px;
+      }
+
+      footer {
+        background-color: #1e1e1e;
+        border-top: 2px solid #5e9ea3;
+        padding: 40px 0;
+        text-align: center;
+        margin-top: 60px;
+      }
+
+      footer a {
+        color: #5e9ea3;
+        text-decoration: none;
+        margin: 0 15px;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      .version-badge {
+        display: inline-block;
+        background-color: #5e9ea3;
+        color: #121212;
+        padding: 5px 15px;
+        font-size: 12px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        margin-top: 10px;
+      }
+
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 36px;
+        }
+
+        .features {
+          grid-template-columns: 1fr;
+        }
+
+        .stats {
+          gap: 30px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <img src="logo.png" alt="Aspis Engine Logo" class="logo" />
+        <h1>ASPIS ENGINE</h1>
+        <p class="tagline">
+          A brutalist Python-based 2D game engine for rapid prototyping
+        </p>
+        <span class="version-badge">V1.0 BETA</span>
+
+        <div class="cta-buttons" style="margin-top: 30px">
+          <a
+            href="https://github.com/yourusername/aspis/releases"
+            class="btn btn-primary"
+            >Download Now</a
+          >
+          <a href="GETTING_STARTED.md" class="btn btn-secondary">Get Started</a>
+          <a
+            href="https://github.com/yourusername/aspis"
+            class="btn btn-secondary"
+            >View on GitHub</a
+          >
+        </div>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-number">~200MB</span>
+          <span class="stat-label">Single File</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">120Hz</span>
+          <span class="stat-label">Physics Precision</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">100%</span>
+          <span class="stat-label">Python</span>
+        </div>
+      </div>
+
+      <div class="features">
+        <div class="feature-card">
+          <h3>Visual Editor</h3>
+          <ul>
+            <li>Project Hub for managing games</li>
+            <li>Drag-and-drop scene editor</li>
+            <li>Component inspector</li>
+            <li>Asset browser</li>
+            <li>Full undo/redo history</li>
+          </ul>
+        </div>
+
+        <div class="feature-card">
+          <h3>Physics Engine</h3>
+          <ul>
+            <li>Gravity and rigid bodies</li>
+            <li>Collision detection</li>
+            <li>Friction and restitution</li>
+            <li>120Hz sub-stepping</li>
+            <li>Powered by Pymunk</li>
+          </ul>
+        </div>
+
+        <div class="feature-card">
+          <h3>Python Scripting</h3>
+          <ul>
+            <li>Component-based system</li>
+            <li>start() and update() lifecycle</li>
+            <li>Input handling</li>
+            <li>Hot-reload scripts</li>
+            <li>Simple API</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="screenshot-section">
+        <h2>See It In Action</h2>
+        <p style="color: #999; max-width: 600px; margin: 0 auto">
+          Screenshots coming soon! The engine features a dark brutalist theme
+          with dull cyan accents, a professional project hub, and a clean scene
+          editor.
+        </p>
+      </div>
+
+      <div
+        style="
+          background-color: #1e1e1e;
+          padding: 40px;
+          border: 2px solid #5e9ea3;
+          margin: 60px 0;
+        "
+      >
+        <h2 style="color: #5e9ea3; margin-bottom: 20px">
+          Quick Start in 5 Minutes
+        </h2>
+        <ol style="font-size: 18px; line-height: 2">
+          <li>Download AspisEngine.exe</li>
+          <li>Double-click to launch (no installation)</li>
+          <li>Click "NEW PROJECT" and name it</li>
+          <li>Add a Camera + Player + Ground</li>
+          <li>Click PLAY to test your game!</li>
+        </ol>
+        <a
+          href="GETTING_STARTED.md"
+          style="
+            color: #5e9ea3;
+            font-weight: bold;
+            display: block;
+            margin-top: 20px;
+          "
+        >
+          → Full tutorial in Getting Started guide
+        </a>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <p>Aspis Engine v1.0 Beta</p>
+        <p style="margin-top: 10px">
+          <a href="GETTING_STARTED.md">Getting Started</a>
+          <a href="API_REFERENCE.md">API Docs</a>
+          <a href="https://github.com/yourusername/aspis">GitHub</a>
+          <a href="https://yourname.itch.io/aspis">itch.io</a>
+        </p>
+        <p style="margin-top: 20px; color: #666; font-size: 14px">
+          Built with Python • PySide6 • Pygame • Pymunk
+        </p>
+        <p style="margin-top: 10px; color: #666; font-size: 12px">
+          © 2026 Your Name • MIT License
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
