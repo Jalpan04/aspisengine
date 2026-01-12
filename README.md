@@ -4,7 +4,7 @@
 
 **A brutalist Python-based 2D game engine for rapid prototyping and development.**
 
-[![Version](https://img.shields.io/badge/version-1.0%20Beta-blue)](https://github.com/yourusername/aspis/releases)
+[![Version](https://img.shields.io/badge/version-1.0%20Beta-blue)](https://github.com/Jalpan04/aspis-engine/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/)
 
@@ -29,7 +29,7 @@ Perfect for **game jams**, **prototypes**, and **learning game development**.
 
 ### Download & Launch
 
-1. Download `AspisEngine.exe` from [Releases](https://github.com/yourusername/aspis/releases/latest)
+1. Download `AspisEngine.exe` from [Releases](https://github.com/Jalpan04/aspis-engine/releases/latest)
 2. Double-click to run (first launch takes 5-10 seconds)
 3. Create your first project!
 
@@ -39,8 +39,8 @@ Perfect for **game jams**, **prototypes**, and **learning game development**.
 1. Click "NEW PROJECT" → Name it "MyGame"
 2. Add a Camera (right-click Hierarchy → Create Empty)
 3. Add a Player (Create Empty → Add SpriteRenderer + BoxCollider + RigidBody)  
-4. Add Ground (Create Empty → Set mass to 0, disable gravity)
-5. Click PLAY ▶ to test
+4. Add Ground (Create Empty -> Set mass to 0, disable gravity)
+5. Click PLAY to test
 ```
 
 **Full Tutorial:** [Getting Started Guide](GETTING_STARTED.md)
@@ -71,17 +71,10 @@ Perfect for **game jams**, **prototypes**, and **learning game development**.
 
 ---
 
-## Screenshots
-
-*Coming soon - show editor, hub, and game examples*
-
----
-
 ## Documentation
 
 - **[Getting Started Guide](GETTING_STARTED.md)** - Step-by-step first project tutorial
 - **[API Reference](API_REFERENCE.md)** - Complete component and scripting docs
-- **[Examples](samples/)** - Demo projects (coming soon)
 
 ---
 
@@ -101,37 +94,10 @@ Perfect for **game jams**, **prototypes**, and **learning game development**.
 
 ---
 
-## Roadmap
-
-**v1.0 Beta** (Current)
-- Core editor and physics
-- Project management system
-- Single-file executable
-
-**v1.1** (Planned)
-- Audio system (music + SFX)
-- Particle effects
-- Tilemap support
-- GameObject.find() / destroy()
-- Runtime scene switching
-- Linux/Mac builds
-
-**v1.2+** (Future)
-- Animation system
-- Visual scripting
-- Built-in asset store
-- Multiplayer networking
-
-See [ROADMAP.md](ROADMAP.md) for details.
-
----
 
 ## Community
 
-- **Discord**: [Join the server](https://discord.gg/yourlink) (coming soon)
-- **GitHub Issues**: [Report bugs](https://github.com/yourusername/aspis/issues)
-- **itch.io**: [Download and rate](https://yourname.itch.io/aspis)
-- **Twitter**: [@AspisEngine](https://twitter.com/aspisengine) (coming soon)
+- **GitHub Issues**: [Report bugs](https://github.com/Jalpan04/aspis-engine/issues)
 
 ---
 
@@ -153,8 +119,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/aspis.git
-cd aspis
+git clone https://github.com/Jalpan04/aspis-engine.git
+cd aspis-engine
 
 # Install dependencies
 pip install -r requirements.txt
@@ -178,7 +144,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ## Credits
 
-**Created by:** [Your Name]
+**Created by:** Jalpan
 
 **Built with:**
 - [Python 3.13](https://www.python.org/)
@@ -193,10 +159,10 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ## Star History
 
-If you find Aspis Engine useful, consider starring the repo! ⭐
+If you find Aspis Engine useful, consider starring the repo!
 
-[![Star History](https://img.shields.io/github/stars/yourusername/aspis?style=social)](https://github.com/yourusername/aspis/stargazers)
+[![Star History](https://img.shields.io/github/stars/Jalpan04/aspis-engine?style=social)](https://github.com/Jalpan04/aspis-engine/stargazers)
 
 ---
 
-**Ready to build your game?** [Download Aspis Engine](https://github.com/yourusername/aspis/releases/latest) and start creating! 🎮
+**Ready to build your game?** [Download Aspis Engine](https://github.com/Jalpan04/aspis-engine/releases/latest) and start creating!

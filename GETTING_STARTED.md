@@ -4,7 +4,7 @@ Welcome to **Aspis Engine** - a brutalist Python-based 2D game engine for rapid 
 
 ## Installation
 
-1. Download `AspisEngine.exe` from the [Releases](https://github.com/yourusername/aspis/releases) page
+1. Download `AspisEngine.exe` from the [Releases](https://github.com/Jalpan04/aspis-engine/releases) page
 2. Double-click to launch - no installation required!
 3. First launch may take 5-10 seconds as files unpack
 
@@ -108,7 +108,7 @@ class PlayerController(Script):
 
 1. **File → Save Scene** (or Ctrl+S)
 2. Save as `main.scene.json` in your `scenes/` folder
-3. Click the **Play ▶** button (top toolbar)
+3. Click the **Play** button (top toolbar)
 4. Your game window opens!
 5. Use **A/D** or **Arrow Keys** to move
 6. Press **Space** or **W** to jump
@@ -172,7 +172,6 @@ Press **ESC** to close the game window.
 
 - **Documentation**: [Full API Reference](./API_REFERENCE.md)
 - **GitHub Issues**: Report bugs and request features
-- **Discord**: Join the Aspis Engine community (link TBD)
 - **Examples**: Check the `samples/` folder in source
 
 ---
