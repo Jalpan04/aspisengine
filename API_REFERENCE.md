@@ -313,7 +313,7 @@ Scenes are stored as JSON files.
 ```
 
 ### Loading Scenes (Runtime)
-Currently scenes are loaded via File → Open in the editor. Programmatic scene switching coming in v1.1.
+Currently scenes are loaded via File -> Open in the editor.
 
 ---
 
@@ -369,14 +369,13 @@ def update(self, delta_time):
 
 **Destroy Object (remove from scene):**
 ```python
-# Not yet supported in v1.0 - mark as inactive instead
-self.game_object.active = False  # Coming in v1.1
+# Not yet supported - mark as inactive instead
+self.game_object.active = False
 ```
 
 **Find Other Objects:**
 ```python
 # Not yet supported - use references set in editor
-# Coming in v1.1: GameObject.find("ObjectName")
 ```
 
 ---
@@ -389,13 +388,6 @@ self.game_object.active = False  # Coming in v1.1
 - Basic scripting API
 - Project management system
 
-**Coming in v1.1**
-- Scene switching at runtime
-- GameObject.find() / destroy()
-- Audio system
-- Particle effects
-- Tilemap support
-
 ---
 
-For more examples, see the `samples/` folder or visit the [GitHub repository](https://github.com/yourusername/aspis).
+For more examples, see the `samples/` folder or visit the [GitHub repository](https://github.com/Jalpan04/aspis-engine).
