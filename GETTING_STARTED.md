@@ -1,6 +1,6 @@
 # Getting Started with Aspis Engine
 
-Welcome to **Aspis Engine** - a brutalist Python-based 2D game engine for rapid prototyping and development.
+Welcome to **Aspis Engine** - a minimalist Python-based 2D game engine for rapid prototyping and development.
 
 ## Installation
 

@@ -2,7 +2,7 @@
 
 <img src="logo.png" width="200" alt="Aspis Engine Logo">
 
-**A brutalist Python-based 2D game engine for rapid prototyping and development.**
+**A minimalist Python-based 2D game engine for rapid prototyping and development.**
 
 [![Version](https://img.shields.io/badge/version-1.0%20Beta-blue)](https://github.com/Jalpan04/aspis-engine/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -12,7 +12,7 @@
 
 ## What is Aspis Engine?
 
-Aspis is a **lightweight, brutalist 2D game engine** built with Python. It features:
+Aspis is a **lightweight, minimalist 2D game engine** built with Python. It features:
 
 - **Visual Editor** with hierarchy, inspector, and asset browser
 - **Physics Engine** powered by Pymunk (gravity, collision, rigid bodies)
@@ -65,7 +65,7 @@ Perfect for **game jams**, **prototypes**, and **learning game development**.
 
 ### Developer Experience
 - **Fast Iteration**: Hot-reload scripts, instant play-testing
-- **Clean UI**: Dark brutalist theme, no distractions
+- **Clean UI**: Professional dark theme, no distractions
 - **Standalone**: One executable, portable projects
 - **Open Source**: Modify, extend, learn from the code
 
@@ -153,7 +153,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 - [Pymunk](http://www.pymunk.org/) (Physics)
 - [PyInstaller](https://www.pyinstaller.org/) (Packaging)
 
-**Inspired by:** Unity, GameMaker, Godot, and the brutalist design movement.
+**Inspired by:** Unity, GameMaker, Godot, and minimalist design principles.
 
 ---
 

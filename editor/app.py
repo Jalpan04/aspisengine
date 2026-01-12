@@ -283,7 +283,7 @@ class MainWindow(QMainWindow):
             self.save_scene()
 
     def apply_theme(self):
-        # Brutalist Dark Theme - Sharp Edges, Monochrome
+        # Professional Dark Theme - Sharp Edges, Monochrome
         self.setStyleSheet("""
             * {
                 border-radius: 0px !important;
