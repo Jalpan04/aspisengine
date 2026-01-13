@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aspis Engine - The Python Game Engine</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #eeeeee;
+            --secondary-bg: #1e1e1e;
+            --accent-green: #4ec9b0; /* Editor Class Name Teal */
+            --accent-border: #3B9E8B; /* Darker shade for hover */
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--bg-color);
+            width: 100%;
+            padding: 20px 0;
+            text-align: center;
+            border-bottom: 4px solid var(--secondary-bg); /* Separator style */
+        }
+
+        /* ... reused styles ... */
+
+        .feature-card {
+            background: #252525; /* Panel color */
+            padding: 20px;
+            border-radius: 4px; /* Sharper corners like editor */
+            border: 1px solid #333333;
+            transition: border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            border-color: #555555;
+        }
+
+        .feature-card h3 {
+            color: var(--accent-green);
+            margin-top: 0;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .download-section {
+            margin: 60px 0;
+            padding: 40px;
+            background: #1e1e1e;
+            border: 1px solid #333333;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: transparent;
+            color: var(--accent-green);
+            padding: 12px 30px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: 1px solid var(--accent-border);
+            border-radius: 0; /* Square buttons like editor */
+            text-transform: uppercase;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-border);
+            color: white;
+            box-shadow: 0 0 10px rgba(0, 170, 0, 0.4);
+        }
+        
+        a { color: var(--accent-green); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <img src="aspis.png" alt="Aspis Engine Logo" class="logo">
+        <h1>Aspis Engine</h1>
+        <div class="subtitle">The Lightweight Python Game Engine</div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <p style="font-size: 1.2rem; line-height: 1.6;">
+                Aspis is a modern, cross-platform 2D game engine built on Python and PySide6.
+                Designed for rapid prototyping and flexibility, it empowers developers to create
+                without limits.
+            </p>
+        </section>
+
+        <section class="features">
+            <div class="feature-card">
+                <h3>Python Powered</h3>
+                <p>Write your game logic in pure Python. Use the libraries you love (NumPy, Pygame) seamlessly.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Visual Editor</h3>
+                <p>Drag-and-drop scene composition. Inspect and modify properties in real-time with the built-in inspector.</p>
+            </div>
+            <div class="feature-card">
+                <h3>ECS Architecture</h3>
+                <p>Flexible Entity-Component-System design allows for modular and performant game code.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Physics Included</h3>
+                <p>Integrated rigid body physics powered by Pymunk for realistic collisions and interactions.</p>
+            </div>
+        </section>
+
+        <section class="download-section">
+            <h2>Get Started Today</h2>
+            <p>Download the standalone executable for Windows.</p>
+            <br>
+            <a href="dist/AspisEngine.exe" class="btn">
+                Download Aspis Engine
+                <small>v1.0.0 &bull; Windows (x64)</small>
+            </a>
+            <p style="margin-top: 15px; font-size: 0.9rem; color: #888;">
+                Requires Windows 10/11.<br>
+                Source code available on <a href="https://github.com/Jalpan04/Aspis">GitHub</a>.
+            </p>
+        </section>
+
+    </main>
+
+    <footer>
+        &copy; 2026 Aspis Engine Contributors. Open Source (MIT).
+    </footer>
+
+</body>
+</html>

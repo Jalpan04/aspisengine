@@ -12,6 +12,7 @@ a = Analysis(
         ('shared', 'shared'),
         ('assets', 'assets'),
         ('scenes', 'scenes'),
+        ('stress_test', 'stress_test'),
     ],
     hiddenimports=[
         'PySide6.QtCore',

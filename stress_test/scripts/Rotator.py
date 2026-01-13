@@ -5,6 +5,6 @@ class Rotator(Script):
 
     def update(self, dt):
         # Debug who is rotating
-        # print(f"Rotating: {self.game_object.name}")
+        print(f"Rotating: {self.game_object.name}")
         current_rot = self.transform.rotation
         self.transform.rotation = current_rot + self.speed * dt
