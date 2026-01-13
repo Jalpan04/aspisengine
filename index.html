@@ -5,121 +5,268 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aspis Engine - The Python Game Engine</title>
     <style>
-        :root {
-            --bg-color: #121212;
-            --text-color: #eeeeee;
-            --secondary-bg: #1e1e1e;
-            --accent-green: #4ec9b0; /* Editor Class Name Teal */
-            --accent-border: #3B9E8B; /* Darker shade for hover */
-            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: var(--font-family);
+        * {
             margin: 0;
             padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-color: #111111;
+            --text-color: #d4d4d4;
+            --secondary-bg: #1c1c1c;
+            --accent-green: #5dd4b4;
+            --border-color: #2a2a2a;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
         }
 
         header {
-            background-color: var(--bg-color);
-            width: 100%;
-            padding: 20px 0;
+            padding: 80px 20px 60px;
             text-align: center;
-            border-bottom: 4px solid var(--secondary-bg); /* Separator style */
+            border-bottom: 3px solid var(--accent-green);
         }
 
-        /* ... reused styles ... */
+        .logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--accent-green);
+            letter-spacing: -1px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 80px;
+        }
+
+        .hero {
+            padding: 80px 40px;
+            background: var(--secondary-bg);
+            margin: 60px 0;
+            border-left: 4px solid var(--accent-green);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 0 auto;
+            font-weight: 400;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2px;
+            margin-bottom: 80px;
+            background: var(--border-color);
+        }
 
         .feature-card {
-            background: #252525; /* Panel color */
-            padding: 20px;
-            border-radius: 4px; /* Sharper corners like editor */
-            border: 1px solid #333333;
-            transition: border-color 0.2s;
+            background: var(--secondary-bg);
+            padding: 40px;
+            border: none;
+            position: relative;
         }
 
-        .feature-card:hover {
-            border-color: #555555;
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-green);
         }
 
         .feature-card h3 {
             color: var(--accent-green);
-            margin-top: 0;
-            font-size: 1.1rem;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            font-weight: 800;
+        }
+
+        .feature-card p {
+            color: #b4b4b4;
+            line-height: 1.7;
+            font-size: 1rem;
+            font-weight: 400;
         }
 
         .download-section {
-            margin: 60px 0;
-            padding: 40px;
-            background: #1e1e1e;
-            border: 1px solid #333333;
-            border-radius: 4px;
-            text-align: center;
+            margin: 80px 0;
+            padding: 60px 40px;
+            background: var(--accent-green);
+            color: var(--bg-color);
+            border: none;
+        }
+
+        .download-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 0px;
+        }
+
+        .download-section > p {
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
         }
 
         .btn {
-            display: inline-block;
-            background-color: transparent;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-color);
             color: var(--accent-green);
-            padding: 12px 30px;
+            padding: 22px 45px;
             text-decoration: none;
-            font-size: 1.1rem;
-            font-weight: bold;
-            border: 1px solid var(--accent-border);
-            border-radius: 0; /* Square buttons like editor */
+            font-size: 1rem;
+            font-weight: 800;
+            border: 3px solid var(--bg-color);
             text-transform: uppercase;
-            transition: all 0.2s;
-            margin-top: 10px;
+            letter-spacing: 0.5px;
+            font-family: 'Inter', sans-serif;
         }
 
         .btn:hover {
-            background-color: var(--accent-border);
-            color: white;
-            box-shadow: 0 0 10px rgba(0, 170, 0, 0.4);
+            background: transparent;
+            color: var(--bg-color);
+            border-color: var(--bg-color);
+        }
+
+        .btn small {
+            font-size: 0.7rem;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
         }
 
         .btn-secondary {
-            border-color: #666;
-            color: #aaa;
+            background: transparent;
+            color: var(--bg-color);
+            border-color: var(--bg-color);
         }
+
         .btn-secondary:hover {
-            background-color: #333;
-            color: white;
-            border-color: #888;
-            box-shadow: none;
-        }
-        
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
+            background: var(--bg-color);
+            color: var(--accent-green);
         }
 
-        a { color: var(--accent-green); text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        .note {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--secondary-bg);
+            border-top: 3px solid var(--accent-green);
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        /* Grid overlay effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(93, 212, 180, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(93, 212, 180, 0.015) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 0.9rem;
+            }
+
+            .hero {
+                padding: 40px 20px;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .download-section h2 {
+                font-size: 2rem;
+            }
+        }
     </style>
 </head>
 <body>
-
     <header>
-        <img src="aspis.png" alt="Aspis Engine Logo" class="logo">
+        <img src="logo.png" alt="Aspis Engine Logo" class="logo">
         <h1>Aspis Engine</h1>
         <div class="subtitle">The Lightweight Python Game Engine</div>
     </header>
 
     <main>
         <section class="hero">
-            <p style="font-size: 1.2rem; line-height: 1.6;">
+            <p>
                 Aspis is a modern, cross-platform 2D game engine built on Python and PySide6.
                 Designed for rapid prototyping and flexibility, it empowers developers to create
                 without limits.
@@ -129,47 +276,45 @@
         <section class="features">
             <div class="feature-card">
                 <h3>Python Powered</h3>
-                <p>Write your game logic in pure Python. Use the libraries you love (NumPy, Pygame) seamlessly.</p>
+                <p>Write your game logic in pure Python. Use the libraries you love like NumPy and Pygame seamlessly with full integration.</p>
             </div>
             <div class="feature-card">
                 <h3>Visual Editor</h3>
-                <p>Drag-and-drop scene composition. Inspect and modify properties in real-time with the built-in inspector.</p>
+                <p>Drag-and-drop scene composition. Inspect and modify properties in real-time with the built-in inspector panel.</p>
             </div>
             <div class="feature-card">
                 <h3>ECS Architecture</h3>
-                <p>Flexible Entity-Component-System design allows for modular and performant game code.</p>
+                <p>Flexible Entity-Component-System design allows for modular and performant game code that scales with your project.</p>
             </div>
             <div class="feature-card">
                 <h3>Physics Included</h3>
-                <p>Integrated rigid body physics powered by Pymunk for realistic collisions and interactions.</p>
+                <p>Integrated rigid body physics powered by Pymunk for realistic collisions, forces, and dynamic interactions.</p>
             </div>
         </section>
 
         <section class="download-section">
             <h2>Get Started Today</h2>
-            <p>Download the standalone executable for Windows.</p>
-            <br>
+            <p>Download the standalone executable or explore the source code.</p>
+            
             <div class="btn-group">
                 <a href="dist/AspisEngine.exe" download class="btn">
                     Download Aspis Engine
-                    <small>v1.0.0 &bull; Windows (x64)</small>
+                    <small>v1.0.0 • Windows (x64)</small>
                 </a>
                 <a href="https://github.com/Jalpan04/aspisengine" class="btn btn-secondary">
                     View on GitHub
-                    <small>Source Code</small>
+                    <small>Source Code & Documentation</small>
                 </a>
             </div>
-            <p style="margin-top: 15px; font-size: 0.9rem; color: #888;">
-                Requires Windows 10/11.<br>
-                Source code available via the repository.
+            
+            <p class="note">
+                Requires Windows 10/11 (64-bit) • Open Source under MIT License
             </p>
         </section>
-
     </main>
 
     <footer>
-        &copy; 2026 Aspis Engine Contributors. Open Source (MIT).
+        &copy; 2026 Aspis Engine Contributors • Open Source (MIT)
     </footer>
-
 </body>
 </html>
