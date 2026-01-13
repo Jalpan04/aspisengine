@@ -9,7 +9,7 @@ Aspis Engine is a modern, cross-platform 2D game engine built for rapid prototyp
 ## Download
 
 **Want the standalone executable?**
-Open **[`index.html`](index.html)** in your browser to access the download page and get the latest version of **Aspis Engine (Windows x64)**.
+Open **[`aspis site`](index.html)** to download the latest version of **Aspis Engine (Windows x64)**.
 
 ## Features
 
