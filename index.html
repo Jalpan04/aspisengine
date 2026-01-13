@@ -85,7 +85,25 @@
             color: white;
             box-shadow: 0 0 10px rgba(0, 170, 0, 0.4);
         }
+
+        .btn-secondary {
+            border-color: #666;
+            color: #aaa;
+        }
+        .btn-secondary:hover {
+            background-color: #333;
+            color: white;
+            border-color: #888;
+            box-shadow: none;
+        }
         
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
         a { color: var(--accent-green); text-decoration: none; }
         a:hover { text-decoration: underline; }
 
@@ -131,13 +149,19 @@
             <h2>Get Started Today</h2>
             <p>Download the standalone executable for Windows.</p>
             <br>
-            <a href="dist/AspisEngine.exe" class="btn">
-                Download Aspis Engine
-                <small>v1.0.0 &bull; Windows (x64)</small>
-            </a>
+            <div class="btn-group">
+                <a href="dist/AspisEngine.exe" download class="btn">
+                    Download Aspis Engine
+                    <small>v1.0.0 &bull; Windows (x64)</small>
+                </a>
+                <a href="https://github.com/Jalpan04/aspisengine" class="btn btn-secondary">
+                    View on GitHub
+                    <small>Source Code</small>
+                </a>
+            </div>
             <p style="margin-top: 15px; font-size: 0.9rem; color: #888;">
                 Requires Windows 10/11.<br>
-                Source code available on <a href="https://github.com/Jalpan04/Aspis">GitHub</a>.
+                Source code available via the repository.
             </p>
         </section>
 
