@@ -1,0 +1,47 @@
+{
+  "metadata": {},
+  "objects": [
+    {
+      "id": "crasher",
+      "name": "Crasher",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": ""
+        },
+        "Script": {
+          "script_path": "stress_test/scripts/FaultyScript.py"
+        }
+      }
+    },
+    {
+      "id": "cam",
+      "name": "Main Camera",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ]
+        },
+        "Camera": {
+          "is_main": true
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

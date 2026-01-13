@@ -1,0 +1,119 @@
+{
+  "metadata": {
+    "name": "15 Fast Physics"
+  },
+  "objects": [
+    {
+      "id": "d4c229b5-630a-4577-87f0-0f8c098cd60f",
+      "name": "Main Camera",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "Camera": {
+          "is_main": true
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "a196d862-aaaa-4b76-b95a-fc33767fbf19",
+      "name": "Wall",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            600,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            10
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            200,
+            200,
+            200,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "static",
+          "mass": 1.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "c6f003aa-00ce-4961-95ca-879c0ede3437",
+      "name": "Bullet",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            0,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            0.2,
+            0.2
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            0,
+            0,
+            255
+          ]
+        },
+        "CircleCollider": {
+          "radius": 100,
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 0.1,
+          "velocity": [
+            5000,
+            0
+          ]
+        }
+      },
+      "children": []
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

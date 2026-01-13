@@ -1,0 +1,504 @@
+{
+  "metadata": {
+    "name": "11 Deep Hierarchy"
+  },
+  "objects": [
+    {
+      "id": "6061bf11-da60-4aa1-9976-291e8f4ba6af",
+      "name": "Main Camera",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "Camera": {
+          "is_main": true
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "b1b6ed89-5c4c-4adc-a135-f762a40eb87e",
+      "name": "Root",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        "Script": {
+          "script_path": "stress_test/scripts/Rotator.py"
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "ce968dfd-7c2c-4a4d-9819-192f4d85d58f",
+      "name": "Link_0",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            0,
+            0,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "b1b6ed89-5c4c-4adc-a135-f762a40eb87e"
+    },
+    {
+      "id": "0c7f595f-a7cc-4cc0-8a2b-6f15827c8615",
+      "name": "Link_1",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            245,
+            0,
+            15,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "ce968dfd-7c2c-4a4d-9819-192f4d85d58f"
+    },
+    {
+      "id": "59347a3e-3df0-45a3-9f17-251404305aeb",
+      "name": "Link_2",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            235,
+            0,
+            30,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "0c7f595f-a7cc-4cc0-8a2b-6f15827c8615"
+    },
+    {
+      "id": "a587476c-1330-4e23-9da1-b00ed987bf80",
+      "name": "Link_3",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            225,
+            0,
+            45,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "59347a3e-3df0-45a3-9f17-251404305aeb"
+    },
+    {
+      "id": "643cb820-3622-447a-b3ae-bfb38e3268b4",
+      "name": "Link_4",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            215,
+            0,
+            60,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "a587476c-1330-4e23-9da1-b00ed987bf80"
+    },
+    {
+      "id": "550d04d6-27bc-40f2-aad1-524f333eca3b",
+      "name": "Link_5",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            205,
+            0,
+            75,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "643cb820-3622-447a-b3ae-bfb38e3268b4"
+    },
+    {
+      "id": "0fa2c2b1-2d46-435e-8ee4-0a90c02b74ab",
+      "name": "Link_6",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            195,
+            0,
+            90,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "550d04d6-27bc-40f2-aad1-524f333eca3b"
+    },
+    {
+      "id": "c05307ae-5f6a-4e63-9681-c0d696782d68",
+      "name": "Link_7",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            185,
+            0,
+            105,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "0fa2c2b1-2d46-435e-8ee4-0a90c02b74ab"
+    },
+    {
+      "id": "b121b107-16c7-4ba4-9dc6-c4f94d40458c",
+      "name": "Link_8",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            175,
+            0,
+            120,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "c05307ae-5f6a-4e63-9681-c0d696782d68"
+    },
+    {
+      "id": "85a63051-e664-4804-8427-37e6379140ac",
+      "name": "Link_9",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            165,
+            0,
+            135,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "b121b107-16c7-4ba4-9dc6-c4f94d40458c"
+    },
+    {
+      "id": "711eb643-c661-47e4-b9f0-2d31af62987d",
+      "name": "Link_10",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            155,
+            0,
+            150,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "85a63051-e664-4804-8427-37e6379140ac"
+    },
+    {
+      "id": "7c2b3a17-93ef-464a-899a-7bda58a4c279",
+      "name": "Link_11",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            145,
+            0,
+            165,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "711eb643-c661-47e4-b9f0-2d31af62987d"
+    },
+    {
+      "id": "752b5b8b-77cd-456b-a2ad-ce1efead3ee0",
+      "name": "Link_12",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            135,
+            0,
+            180,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "7c2b3a17-93ef-464a-899a-7bda58a4c279"
+    },
+    {
+      "id": "4daea31d-5ba5-49f1-9b6d-283fb5752adb",
+      "name": "Link_13",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            125,
+            0,
+            195,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "752b5b8b-77cd-456b-a2ad-ce1efead3ee0"
+    },
+    {
+      "id": "0ff31130-157a-46fa-8af4-a054a8920f76",
+      "name": "Link_14",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            20,
+            0
+          ],
+          "rotation": 0,
+          "scale": [
+            0.9,
+            0.9
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            115,
+            0,
+            210,
+            255
+          ]
+        }
+      },
+      "children": [],
+      "parent": "4daea31d-5ba5-49f1-9b6d-283fb5752adb"
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

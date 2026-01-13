@@ -1,0 +1,85 @@
+{
+  "metadata": {},
+  "objects": [
+    {
+      "id": "sun",
+      "name": "Sun",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ],
+          "scale": [
+            2,
+            2
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            255,
+            0,
+            255
+          ]
+        },
+        "Script": {
+          "script_path": "stress_test/scripts/Rotator.py"
+        }
+      }
+    },
+    {
+      "id": "earth",
+      "name": "Earth",
+      "parent": "sun",
+      "components": {
+        "Transform": {
+          "position": [
+            150,
+            0
+          ],
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            0,
+            100,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "cam",
+      "name": "Main Camera",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ]
+        },
+        "Camera": {
+          "is_main": true,
+          "width": 1600.0,
+          "height": 1200.0
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

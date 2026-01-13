@@ -1,0 +1,91 @@
+{
+  "metadata": {
+    "name": "05 Performance Test"
+  },
+  "objects": [
+    {
+      "id": "floor",
+      "name": "Floor",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            590
+          ],
+          "scale": [
+            8,
+            0.2
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "static"
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            100,
+            100,
+            100,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "spawner",
+      "name": "Spawner",
+      "components": {
+        "Transform": {
+          "position": [
+            0,
+            0
+          ]
+        },
+        "Script": {
+          "script_path": "stress_test/scripts/Spawner.py"
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "layer": 0,
+          "visible": true,
+          "tint": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "id": "cam",
+      "name": "Main Camera",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ]
+        },
+        "Camera": {
+          "is_main": true
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

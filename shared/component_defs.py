@@ -72,7 +72,6 @@ class Background:
 class Camera:
     width: float = 800.0
     height: float = 600.0
-    zoom: float = 1.0
     is_main: bool = True
 
 # Map component names to classes for easy lookup

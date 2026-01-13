@@ -1,0 +1,31 @@
+{
+  "settings": {
+    "background_color": [50, 50, 100, 255]
+  },
+  "objects": [
+    {
+      "id": "obj-1",
+      "name": "TestObject",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [400, 300],
+          "rotation": 0,
+          "scale": [1, 1]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "logo.png",
+          "visible": true,
+          "layer": 1,
+          "tint": [255, 255, 255, 255]
+        },
+        "Camera": {
+            "width": 800,
+            "height": 600,
+            "zoom": 1.0,
+            "is_main": true
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QPlainTextEdit, QWidget, QVBoxLayout, QFileDialog
-from PySide6.QtCore import Qt, QRect, QSize
+from PySide6.QtCore import Qt, QRect, QSize, Signal
 from PySide6.QtGui import QColor, QPainter, QTextFormat, QFont
 from editor.syntax import PythonHighlighter
 
@@ -15,6 +15,8 @@ class LineNumberArea(QWidget):
         self.code_editor.lineNumberAreaPaintEvent(event)
 
 class CodeEditor(QPlainTextEdit):
+    file_saved = Signal(str)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.file_path = None
@@ -169,5 +171,6 @@ class CodeEditor(QPlainTextEdit):
             with open(self.file_path, 'w', encoding='utf-8') as f:
                 f.write(self.toPlainText())
             print(f"Saved: {self.file_path}")
+            self.file_saved.emit(self.file_path)
         except Exception as e:
             print(f"Error saving file: {e}")

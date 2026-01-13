@@ -1,0 +1,1028 @@
+{
+  "metadata": {
+    "name": "10 Physics Stacking"
+  },
+  "objects": [
+    {
+      "id": "292f5f71-b219-4abe-b27a-f049a22ffce5",
+      "name": "Main Camera",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            431.09149542508703,
+            71.31847693480057
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "Camera": {
+          "is_main": true,
+          "width": 1800.0,
+          "height": 1600.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "8ef7a8bf-e0f5-457d-87a8-0d3ba6246f1b",
+      "name": "Floor",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            750
+          ],
+          "rotation": 0,
+          "scale": [
+            10,
+            1
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            50,
+            50,
+            50,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "static",
+          "mass": 1.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "1a9a59b9-93ab-48f0-9f6a-87a7527d6b19",
+      "name": "Box_0",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            680
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            100,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "445725b6-3bb7-4457-a930-0e62242a6dc8",
+      "name": "Box_1",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            625
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            105,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "b8bb904e-d345-488c-be12-142493ea4bdd",
+      "name": "Box_2",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            570
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            110,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "42047fd5-5380-450f-905e-835c0a6b198a",
+      "name": "Box_3",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            515
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            115,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "12885b05-e4c1-4252-be3c-d5997ab61533",
+      "name": "Box_4",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            460
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            120,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "22fd22fb-6e3d-4d32-a295-400b2996e4b3",
+      "name": "Box_5",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            405
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            125,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "7d4cdcf5-aa73-4c64-adc8-eab429ea84ae",
+      "name": "Box_6",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            350
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            130,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "ebe34a43-0074-47f2-bb37-0df5de81f8fe",
+      "name": "Box_7",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            295
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            135,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "e8b49bfa-1665-4856-a4dc-351768bfd459",
+      "name": "Box_8",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            240
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            140,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "857b3982-a71f-407a-b7d8-25309d59d30a",
+      "name": "Box_9",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            185
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            145,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "d14c2133-50ee-44e6-b0dc-f04d6e18ebde",
+      "name": "Box_10",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            130
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            150,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "6865ca0b-4cef-4854-98c6-8817c67ec6c5",
+      "name": "Box_11",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            75
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            155,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "5c1e27d0-0a67-4fc2-b1b4-f6af6725556c",
+      "name": "Box_12",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            20
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            160,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "7fc452a0-e737-43d7-a4ab-df57693210ff",
+      "name": "Box_13",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -35
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            165,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "bb236b17-c87f-4f93-8dac-9039402035e5",
+      "name": "Box_14",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -90
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            170,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "d0ec3d5e-cbe3-4499-9be1-bbfe9a02aae2",
+      "name": "Box_15",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -145
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            175,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "7ab40a01-3a10-4a0b-9519-c8f0752c9bc3",
+      "name": "Box_16",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -200
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            180,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "1255fc40-3a2e-45bd-86e7-a2c4a7eb9b9d",
+      "name": "Box_17",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -255
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            185,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "bd93af96-61cf-4053-a135-3364f9ec8459",
+      "name": "Box_18",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -310
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            190,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "866f2ec7-8540-44d2-90ed-abdb1e2c2258",
+      "name": "Box_19",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -365
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            195,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "eb9ff59e-ee3d-4962-be8d-24a40f91aff9",
+      "name": "Box_20",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -420
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            200,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "a5d3bcb1-2186-4676-9432-9cf56a667588",
+      "name": "Box_21",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -475
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            205,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "482558bc-f80e-4dd8-b055-60c0f3be9cb7",
+      "name": "Box_22",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -530
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            210,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "e9959a96-58df-4113-b72c-9e3fc41dc647",
+      "name": "Box_23",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -585
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            215,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "cd095126-e4ce-472e-a8d6-ba0b0e3781d0",
+      "name": "Box_24",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            -640
+          ],
+          "rotation": 0,
+          "scale": [
+            0.5,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            220,
+            0,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 5.0
+        }
+      },
+      "children": []
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

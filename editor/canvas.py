@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QWidget
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPixmap, QCursor, QPolygonF
+from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPixmap, QCursor, QPolygonF, QPainterPath
 from PySide6.QtCore import Qt, QRectF, QPointF
 from editor.editor_state import EditorState
 from editor.undo_redo import ChangeComponentCommand
@@ -272,8 +272,8 @@ class SceneCanvas(QWidget):
             base_w = pixmap.width()
             base_h = pixmap.height()
         else:
-            base_w = 40
-            base_h = 40
+            base_w = 100
+            base_h = 100
         
         w = base_w * scale[0]
         h = base_h * scale[1]
@@ -312,20 +312,75 @@ class SceneCanvas(QWidget):
             # Draw Circle if CircleCollider exists
             if "CircleCollider" in obj.get("components", {}):
                 # Assume diameter matches width/height derived from scale (usually 50 base)
-                # Or use collider radius? Visuals usually driven by Transform.
                 painter.drawEllipse(QRectF(-w/2, -h/2, w, h))
+            elif "Camera" in obj.get("components", {}):
+                # Special Camera Icon
+                icon_size = 40 
+                iw = icon_size * scale[0]
+                ih = icon_size * scale[1]
+                
+                # Styling: Professional Icon
+                # Fill: Faint Yellow-White
+                painter.setBrush(QColor(255, 240, 150, 40)) 
+                # Stroke: Subtle Outline
+                painter.setPen(QPen(QColor(255, 240, 150, 150), 1.5/self.zoom))
+                
+                # 1. Body (Rounded Rect)
+                body_w = iw * 0.7
+                body_h = ih * 0.6
+                path = QPainterPath()
+                path.addRoundedRect(QRectF(-iw/2, -body_h/2, body_w, body_h), 2, 2)
+                
+                # 2. Lens (Triangle on right)
+                lens_size = body_h * 0.7
+                # Triangle pointing right
+                path.moveTo(iw/2 - lens_size, -lens_size/2)
+                path.lineTo(iw/2, -lens_size)
+                path.lineTo(iw/2, lens_size)
+                path.lineTo(iw/2 - lens_size, lens_size/2)
+                
+                painter.drawPath(path)
+                
+            elif "TextRenderer" in obj.get("components", {}):
+                # Text Rendering
+                text_data = obj["components"]["TextRenderer"]
+                text_content = text_data.get("text", "Text")
+                font_size = int(text_data.get("font_size", 24))
+                color_list = text_data.get("color", [255, 255, 255])
+                if len(color_list) == 3: color_list.append(255)
+                
+                # Undo Scale so text size is in Screen/World units (not affected by object scale)
+                # Note: Painter is already scaled by self.zoom, which we WANT (to zoom in on text).
+                # But we DON'T want object scale affecting text distortion.
+                painter.save()
+                if scale[0] != 0 and scale[1] != 0:
+                    painter.scale(1/scale[0], 1/scale[1])
+                
+                painter.setPen(QColor(*color_list))
+                font = QFont("Arial")
+                font.setPixelSize(font_size)
+                painter.setFont(font)
+                
+                # Draw Center
+                # Bounding box large enough
+                painter.drawText(QRectF(-1000, -1000, 2000, 2000), Qt.AlignCenter, text_content)
+                
+                painter.restore()
+                
             else:
                 # Default Square
                 painter.drawRect(QRectF(-w/2, -h/2, w, h))
             
             # Name Tag
-            if is_selected:
-                painter.setPen(QPen(Qt.white))
-            else:
-                painter.setPen(QPen(Qt.lightGray))
-                
-            painter.setFont(QFont("Segoe UI", 10))
-            painter.drawText(QRectF(-w/2, -h/2, w, h), Qt.AlignCenter, obj.get("name", "?")[:10])
+            # Name Tag (Skip if TextRenderer is present to avoid clutter)
+            if "TextRenderer" not in obj.get("components", {}):
+                if is_selected:
+                    painter.setPen(QPen(Qt.white))
+                else:
+                    painter.setPen(QPen(Qt.lightGray))
+                    
+                painter.setFont(QFont("Segoe UI", 10))
+                painter.drawText(QRectF(-w/2, -h/2, w, h), Qt.AlignCenter, obj.get("name", "?")[:10])
 
         # Draw Camera Gizmo
         camera_data = obj.get("components", {}).get("Camera")
@@ -360,46 +415,47 @@ class SceneCanvas(QWidget):
         if is_selected:
             self.draw_handles_local(painter, w, h)
             
-        # --- Draw Collider Gizmos (Green) ---
-        # Draw BoxCollider
-        box = obj.get("components", {}).get("BoxCollider")
-        if box:
-            size_w, size_h = box.get("size", [50, 50])
-            off_x, off_y = box.get("offset", [0, 0])
+        # --- Draw Collider Gizmos (Green - Selected Only) ---
+        if is_selected:
+            painter.save()
+            # Draw BoxCollider
+            box = obj.get("components", {}).get("BoxCollider")
+            if box:
+                size_w, size_h = box.get("size", [50, 50])
+                off_x, off_y = box.get("offset", [0, 0])
+                
+                # Apply Object Scale
+                cw = size_w * scale[0]
+                ch = size_h * scale[1]
+                cox = off_x * scale[0]
+                coy = off_y * scale[1]
+                
+                collider_rect = QRectF(cox - cw/2, coy - ch/2, cw, ch)
+                
+                # Style: Dashed Light Green with subtle fill
+                pen = QPen(QColor(100, 255, 100), 1 / self.zoom)
+                pen.setStyle(Qt.DashLine)
+                painter.setPen(pen)
+                painter.setBrush(QColor(100, 255, 100, 30)) # 30 alpha fill
+                painter.drawRect(collider_rect)
+                
+            # Draw CircleCollider
+            circle = obj.get("components", {}).get("CircleCollider")
+            if circle:
+                radius = circle.get("radius", 25.0)
+                off_x, off_y = circle.get("offset", [0, 0])
+                
+                s_radius = radius * max(abs(scale[0]), abs(scale[1]))
+                cox = off_x * scale[0]
+                coy = off_y * scale[1]
+                
+                pen = QPen(QColor(100, 255, 100), 1 / self.zoom)
+                pen.setStyle(Qt.DashLine)
+                painter.setPen(pen)
+                painter.setBrush(QColor(100, 255, 100, 30))
+                painter.drawEllipse(QPointF(cox, coy), s_radius, s_radius)
             
-            # Apply Object Scale to Collider Size
-            cw = size_w * scale[0]
-            ch = size_h * scale[1]
-            
-            # Apply Object Scale to Offset? Usually yes.
-            cox = off_x * scale[0]
-            coy = off_y * scale[1]
-            
-            collider_rect = QRectF(cox - cw/2, coy - ch/2, cw, ch)
-            
-            pen = QPen(QColor(0, 255, 0), 2 / self.zoom) # Green
-            painter.setPen(pen)
-            painter.setBrush(Qt.NoBrush)
-            painter.drawRect(collider_rect)
-            
-        # Draw CircleCollider
-        circle = obj.get("components", {}).get("CircleCollider")
-        if circle:
-            radius = circle.get("radius", 25.0)
-            off_x, off_y = circle.get("offset", [0, 0])
-            
-            # Scale radius? Max of scale axes usually
-            # Pymunk/Box2D: Circle scaling is uniform or max.
-            # Let's use max(abs(scale[0]), abs(scale[1]))
-            s_radius = radius * max(abs(scale[0]), abs(scale[1]))
-             
-            cox = off_x * scale[0]
-            coy = off_y * scale[1]
-            
-            pen = QPen(QColor(0, 255, 0), 2 / self.zoom)
-            painter.setPen(pen)
-            painter.setBrush(Qt.NoBrush)
-            painter.drawEllipse(QPointF(cox, coy), s_radius, s_radius)
+            painter.restore()
 
         painter.restore()
 

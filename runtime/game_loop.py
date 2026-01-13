@@ -52,7 +52,7 @@ class GameRuntime:
     def _inject_api(self, script_instance):
         """Injects runtime methods into the script instance."""
         def inst(prefab, pos, rot=0):
-            self.instantiate_queue.append((prefab, pos, rot))
+            return self._perform_instantiate(prefab, pos, rot)
         
         def dest(obj):
             self.destroy_queue.append(obj)
@@ -131,6 +131,7 @@ class GameRuntime:
             # Logic: Remove from objects list, active_scripts list, and physics bodies
             
             ids_to_destroy = set(obj.id for obj in self.destroy_queue)
+            print(f"DEBUG: Processing destruction for {len(ids_to_destroy)} objects.")
             
             # Recursive destroy logic? For now, flat.
             # Actually, we need to handle children too if we support hierarchy destroy.
@@ -286,6 +287,14 @@ class GameRuntime:
                             setattr(instance, key, value)
                             
                     self.active_scripts.append(instance)
+                    
+                    # Call Awake() immediately
+                    if hasattr(instance, "awake"):
+                        try:
+                            instance.awake()
+                        except Exception as e:
+                            print(f"Error in Awake() of {name}: {e}")
+
                     print(f"Attached script {name} to {game_object.name}")
                     return
 
@@ -359,8 +368,6 @@ class GameRuntime:
                     if script_path:
                         self.load_script(script_path, go)
 
-                    self.load_script(script_path, go)
-
                 # Load Physics Components
                 if "RigidBody" in comps:
                     go.components["RigidBody"] = comps["RigidBody"]
@@ -373,6 +380,9 @@ class GameRuntime:
                 
                 if "Camera" in comps:
                     go.components["Camera"] = comps["Camera"]
+                
+                if "TextRenderer" in comps:
+                    go.components["TextRenderer"] = comps["TextRenderer"]
 
                 self.objects.append(go)
 
@@ -445,7 +455,7 @@ class GameRuntime:
         # Default settings if no camera
         screen_w, screen_h = 800, 600
         cam_x, cam_y = 0.0, 0.0
-        zoom = 1.0
+
         
         # Scene Settings (Background)
         bg_color = (20, 20, 20)
@@ -459,8 +469,6 @@ class GameRuntime:
         if camera_comp:
             screen_w = int(camera_comp.get("width", 800))
             screen_h = int(camera_comp.get("height", 600))
-            zoom = float(camera_comp.get("zoom", 1.0))
-            if zoom <= 0.001: zoom = 1.0 # Safety check
             cam_x, cam_y = camera_obj.world_position[0], camera_obj.world_position[1]
         
         # Resize window if needed
@@ -492,9 +500,9 @@ class GameRuntime:
             rot = go.world_rotation 
             scale = go.world_scale
 
-            # Screen X = (ObjX - CamX) * Zoom + CenterX
-            screen_x = (pos[0] - cam_x) * zoom + center_x
-            screen_y = (pos[1] - cam_y) * zoom + center_y
+            # Screen X = (ObjX - CamX) + CenterX
+            screen_x = (pos[0] - cam_x) + center_x
+            screen_y = (pos[1] - cam_y) + center_y
             
             # --- 0. Background Component ---
             bg_data = go.components.get("Background")
@@ -513,17 +521,16 @@ class GameRuntime:
                 else:
                     # World Space (Standard) - Use Transform
                     # Scale based on 100x100 base size if no sprite, or sprite size
-                    draw_zoom = zoom
                     base_w, base_h = 100, 100 # Default size
                     
                     if path and path in self.sprites:
                         base_w, base_h = self.sprites[path].get_size()
                     
-                    w = base_w * scale[0] * draw_zoom
-                    h = base_h * scale[1] * draw_zoom
+                    w = base_w * scale[0]
+                    h = base_h * scale[1]
                     
-                    screen_x = (pos[0] - cam_x) * zoom + center_x
-                    screen_y = (pos[1] - cam_y) * zoom + center_y
+                    screen_x = (pos[0] - cam_x) + center_x
+                    screen_y = (pos[1] - cam_y) + center_y
                     
                     target_rect = pygame.Rect(0, 0, int(w), int(h))
                     target_rect.center = (screen_x, screen_y)
@@ -579,11 +586,10 @@ class GameRuntime:
                 if not path:
                      # Fallback to procedural shape
                     if "CircleCollider" in go.components:
-                        radius = 25 
-                        img = pygame.Surface((50, 50), pygame.SRCALPHA)
-                        pygame.draw.circle(img, (255, 255, 255), (25, 25), 25)
+                        img = pygame.Surface((100, 100), pygame.SRCALPHA)
+                        pygame.draw.circle(img, (255, 255, 255), (50, 50), 50)
                     else:
-                        img = pygame.Surface((50, 50), pygame.SRCALPHA)
+                        img = pygame.Surface((100, 100), pygame.SRCALPHA)
                         img.fill((255, 255, 255))
                 elif path in self.sprites:
                     img = self.sprites[path]
@@ -592,9 +598,9 @@ class GameRuntime:
                     rot = go.world_rotation
                     base_scale = go.world_scale
                     
-                    # Apply Zoom to Scale
-                    scale_x = base_scale[0] * zoom
-                    scale_y = base_scale[1] * zoom
+                    # Apply Scale
+                    scale_x = base_scale[0]
+                    scale_y = base_scale[1]
                     
                     # Tint
                     tint = sprite_data.get("tint", [255, 255, 255, 255])
@@ -613,7 +619,7 @@ class GameRuntime:
                         img = pygame.transform.flip(img, False, True)
                         scale_y = abs(scale_y)
                     
-                    # Scale (Base size * zoom)
+                    # Scale (Base size)
                     target_w = max(1, int(img.get_width() * scale_x))
                     target_h = max(1, int(img.get_height() * scale_y))
                     
@@ -633,8 +639,8 @@ class GameRuntime:
                 text_content = text_data.get("text", "Text")
                 base_font_size = int(text_data.get("font_size", 24))
                 
-                # Apply Zoom to Font Size
-                scaled_font_size = int(base_font_size * zoom)
+                # Font Size
+                scaled_font_size = int(base_font_size)
                 
                 color_list = text_data.get("color", [255, 255, 255])
                 color = tuple(color_list[:3])

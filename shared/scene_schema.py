@@ -35,7 +35,7 @@ class Scene:
     def create_empty(name: str = "New Scene") -> 'Scene':
         # Default Main Camera
         cam = GameObject.create("Main Camera")
-        cam.components["Camera"] = asdict(Camera(width=1280, height=720, zoom=1.0, is_main=True))
+        cam.components["Camera"] = asdict(Camera(width=1280, height=720, is_main=True))
         cam.components["Transform"]["position"] = [0.0, 0.0]
         
         return Scene(

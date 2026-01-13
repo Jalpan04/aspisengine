@@ -1,0 +1,58 @@
+{
+  "metadata": {},
+  "objects": [
+    {
+      "id": "player",
+      "name": "Player",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ],
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            107,
+            0,
+            216
+          ]
+        },
+        "Script": {
+          "script_path": "stress_test/scripts/PlayerController.py"
+        }
+      }
+    },
+    {
+      "id": "cam",
+      "name": "Main Camera",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ]
+        },
+        "Camera": {
+          "is_main": true,
+          "zoom": 1.0
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

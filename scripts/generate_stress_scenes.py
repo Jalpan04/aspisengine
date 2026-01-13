@@ -69,11 +69,10 @@ def add_renderer(obj, color, size=(50,50)):
         "layer": 0
     }
 
-def add_camera(obj, zoom=1.0):
+def add_camera(obj):
     obj["components"]["Camera"] = {
         "width": 800,
         "height": 600,
-        "zoom": zoom,
         "is_main": True
     }
 
@@ -83,7 +82,7 @@ def gen_tower():
 
     # Camera
     cam = create_obj("Main Camera", [0, 0])
-    add_camera(cam, zoom=0.8) # Zoom out to see stack
+    add_camera(cam)
     scene["objects"].append(cam)
     
     # Ground
@@ -111,7 +110,7 @@ def gen_bounce():
 
     # Camera
     cam = create_obj("Main Camera", [0, -100])
-    add_camera(cam, zoom=1.0)
+    add_camera(cam)
     scene["objects"].append(cam)
     
     # Ground
@@ -143,7 +142,7 @@ def gen_speed():
 
     # Camera
     cam = create_obj("Main Camera", [400, 0])
-    add_camera(cam, zoom=0.6)
+    add_camera(cam)
     scene["objects"].append(cam)
     
     # Walls (Thin)
@@ -169,7 +168,7 @@ def gen_friction():
 
     # Camera
     cam = create_obj("Main Camera", [-150, 0])
-    add_camera(cam, zoom=0.8)
+    add_camera(cam)
     scene["objects"].append(cam)
     
     frictions = [0.0, 0.5, 1.0]
@@ -200,7 +199,7 @@ def gen_mass():
 
     # Camera
     cam = create_obj("Main Camera", [0, 0])
-    add_camera(cam, zoom=0.8)
+    add_camera(cam)
     scene["objects"].append(cam)
     
     ground = create_obj("Ground", [0, 300], scale=[20, 0.5]) # Visual 2000x50

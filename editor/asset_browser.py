@@ -29,9 +29,9 @@ class AssetBrowser(QWidget):
 
         self.model = QFileSystemModel()
         self.model.setRootPath(project_root)
-        self.model.setFilter(QDir.AllEntries | QDir.NoDotAndDotDot)
-        self.model.setNameFilters(["*.png", "*.jpg", "*.jpeg", "*.scene.json", "*.py", "*.prefab"])
-        self.model.setNameFilterDisables(False)
+        self.model.setFilter(QDir.AllEntries | QDir.NoDotAndDotDot | QDir.AllDirs)
+        # self.model.setNameFilters(["*.png", "*.jpg", "*.jpeg", "*.scene.json", "*.py", "*.prefab"])
+        # self.model.setNameFilterDisables(False)
         
         self.list_view = QListView()
         self.list_view.setModel(self.model)

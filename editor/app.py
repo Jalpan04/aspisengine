@@ -49,6 +49,12 @@ class MainWindow(QMainWindow):
         # Tab 2: Script Editor
         self.code_editor = CodeEditor()
         self.central_tabs.addTab(self.code_editor, "Script")
+        
+        # Connect Save Feedback
+        self.code_editor.file_saved.connect(lambda p: self.statusBar().showMessage(f"Saved: {os.path.basename(p)}", 3000))
+
+        # Status Bar
+        self.statusBar().showMessage("Ready")
 
         # 2. Hierarchy (Left)
         self.dock_hierarchy = QDockWidget("Hierarchy", self)
@@ -62,6 +68,7 @@ class MainWindow(QMainWindow):
         self.dock_inspector = QDockWidget("Inspector", self)
         inspector_panel = InspectorPanel()
         inspector_panel.setMinimumWidth(280)
+        inspector_panel.request_open_script.connect(self.open_script)
         self.dock_inspector.setWidget(inspector_panel)
         self.dock_inspector.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock_inspector)
@@ -92,8 +99,25 @@ class MainWindow(QMainWindow):
         self.menuBar().setCornerWidget(self.play_btn, Qt.TopRightCorner)
 
     def open_script(self, path):
-        """Opens a script in the built-in editor."""
-        if path.endswith(".py") or path.endswith(".json"):
+        """Opens a file from the Asset Browser."""
+        if path.endswith(".scene.json"):
+            # Load Scene
+            try:
+                data = load_scene(path)
+                scene = Scene(
+                    metadata=data.get("metadata", {}),
+                    objects=data.get("objects", []),
+                    prefabs=data.get("prefabs", {})
+                )
+                self.state.current_scene_path = path
+                self.state.load_scene(scene)
+                self.setWindowTitle(f"Aspis Engine Editor - {os.path.basename(path)}")
+                self.central_tabs.setCurrentWidget(self.canvas) # Switch to Scene Tab
+                print(f"Loaded scene: {path}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to load scene:\n{e}")
+
+        elif path.endswith(".py") or path.endswith(".json") or path.endswith(".prefab"):
             self.code_editor.load_file(path)
             self.central_tabs.setCurrentWidget(self.code_editor)
 
@@ -283,7 +307,7 @@ class MainWindow(QMainWindow):
             self.save_scene()
 
     def apply_theme(self):
-        # Professional Dark Theme - Sharp Edges, Monochrome
+        # Brutalist Dark Theme - Sharp Edges, Monochrome
         self.setStyleSheet("""
             * {
                 border-radius: 0px !important;

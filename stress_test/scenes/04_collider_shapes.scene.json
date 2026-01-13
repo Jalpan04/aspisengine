@@ -1,0 +1,138 @@
+{
+  "metadata": {
+    "name": "04 Collider Shapes"
+  },
+  "objects": [
+    {
+      "id": "cam",
+      "name": "Main Camera",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ]
+        },
+        "Camera": {
+          "is_main": true,
+          "width": 800,
+          "height": 600
+        }
+      }
+    },
+    {
+      "id": "slope",
+      "name": "Slope",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            400
+          ],
+          "rotation": 30,
+          "scale": [
+            3,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            100,
+            100,
+            255,
+            255
+          ]
+        },
+        "RigidBody": {
+          "body_type": "static"
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ],
+          "friction": 0.5,
+          "restitution": 0.5
+        }
+      }
+    },
+    {
+      "id": "ball",
+      "name": "Ball",
+      "components": {
+        "Transform": {
+          "position": [
+            300,
+            100
+          ],
+          "scale": [
+            0.3992709817590379,
+            0.3992709817590379
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            100,
+            100,
+            255
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 1
+        },
+        "CircleCollider": {
+          "radius": 50,
+          "friction": 0.5,
+          "restitution": 0.8
+        }
+      }
+    },
+    {
+      "id": "floor",
+      "name": "Floor",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            580
+          ],
+          "scale": [
+            8,
+            0.5
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            100,
+            255,
+            100,
+            255
+          ]
+        },
+        "RigidBody": {
+          "body_type": "static"
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

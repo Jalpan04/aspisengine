@@ -11,6 +11,5 @@ env/
 venv/
 *.jpg
 *.png
-!logo.png
 *.scene.json.backup
 *.prefab.backup

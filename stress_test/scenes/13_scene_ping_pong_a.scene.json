@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "name": "13 Ping Pong A"
+  },
+  "objects": [
+    {
+      "id": "a12bbb52-2d66-4afc-b74d-bd46121e103a",
+      "name": "Main Camera",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "Camera": {
+          "is_main": true
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "ac82647c-ab28-40bc-84ea-c784081a0419",
+      "name": "ManagerA",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            300,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            0,
+            0,
+            255
+          ]
+        },
+        "Script": {
+          "script_path": "stress_test/scripts/SceneSwitcher.py",
+          "properties": {
+            "next_scene": "stress_test/scenes/13_scene_ping_pong_b.scene.json"
+          }
+        }
+      },
+      "children": []
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      30,
+      255
+    ]
+  }
+}

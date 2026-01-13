@@ -148,8 +148,16 @@ class PhysicsSystem:
             friction = rb_data.get("friction", 0.5)
             initial_velocity = rb_data.get("velocity", [0.0, 0.0])
             fixed_rotation = rb_data.get("fixed_rotation", False)
-            # Mass 0 means Static in our engine convention
-            body_type = pymunk.Body.DYNAMIC if mass > 0 else pymunk.Body.STATIC
+            # Determine Body Type from 'body_type' string or Mass
+            b_type_str = rb_data.get("body_type", "dynamic").lower()
+            
+            if b_type_str == "static":
+                body_type = pymunk.Body.STATIC
+            elif b_type_str == "kinematic":
+                body_type = pymunk.Body.KINEMATIC
+            else:
+                # Default to Dynamic, but check mass convention
+                body_type = pymunk.Body.DYNAMIC if mass > 0 else pymunk.Body.STATIC
         else:
             mass = 0
             use_gravity = False
@@ -198,8 +206,18 @@ class PhysicsSystem:
             cat = box_data.get("category_bitmask", 1)
             mask = box_data.get("collision_mask", 0xFFFFFFFF)
             
-            width, height = size
-            ox, oy = offset
+            # Apply Scale to Collider Size
+            # Absolute processing for negative scales? Pymunk polys must be convex/ordered.
+            # We usually use abs() for size.
+            scale_x = abs(obj.scale[0])
+            scale_y = abs(obj.scale[1])
+            
+            width = size[0] * scale_x
+            height = size[1] * scale_y
+            
+            ox = offset[0] * obj.scale[0]
+            oy = offset[1] * obj.scale[1]
+            
             l, r = ox - width/2, ox + width/2
             t, b = oy - height/2, oy + height/2
             verts = [(l, t), (r, t), (r, b), (l, b)]
@@ -223,7 +241,14 @@ class PhysicsSystem:
             cat = circ_data.get("category_bitmask", 1)
             mask = circ_data.get("collision_mask", 0xFFFFFFFF)
             
-            shape = pymunk.Circle(body, radius, offset=(c_offset[0], c_offset[1]))
+            # Apply Scale (Max Axis Uniform)
+            max_scale = max(abs(obj.scale[0]), abs(obj.scale[1]))
+            final_radius = radius * max_scale
+            
+            ox = c_offset[0] * obj.scale[0]
+            oy = c_offset[1] * obj.scale[1]
+            
+            shape = pymunk.Circle(body, final_radius, offset=(ox, oy))
             shape.sensor = is_trigger
             shape.elasticity = restitution
             shape.friction = friction

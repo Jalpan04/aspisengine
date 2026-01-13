@@ -1,0 +1,148 @@
+{
+  "metadata": {},
+  "objects": [
+    {
+      "id": "floor",
+      "name": "Floor",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            550
+          ],
+          "scale": [
+            16.0,
+            1.0
+          ]
+        },
+        "RigidBody": {
+          "body_type": "static",
+          "mass": 0
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            100,
+            100,
+            100,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            50,
+            50
+          ],
+          "offset": [
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "id": "box1",
+      "name": "Box1",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            100
+          ],
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            50,
+            50
+          ],
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 1
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            255,
+            100,
+            100,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "box2",
+      "name": "Box2",
+      "components": {
+        "Transform": {
+          "position": [
+            405,
+            0
+          ],
+          "scale": [
+            1,
+            1
+          ],
+          "rotation": 15
+        },
+        "BoxCollider": {
+          "size": [
+            50,
+            50
+          ],
+          "offset": [
+            0,
+            0
+          ]
+        },
+        "RigidBody": {
+          "body_type": "dynamic",
+          "mass": 1
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            100,
+            100,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "cam",
+      "name": "Main Camera",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ]
+        },
+        "Camera": {
+          "is_main": true,
+          "zoom": 1.0
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "name": "12 Broken Assets"
+  },
+  "objects": [
+    {
+      "id": "a7c8216f-f7e9-48cf-8bb9-ccf46f3ac523",
+      "name": "Main Camera",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "Camera": {
+          "is_main": true
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "e2565e24-2f51-43d7-ab3d-31735ef1313f",
+      "name": "MissingSprite",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            200,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "non_existent.png",
+          "tint": [
+            255,
+            255,
+            255,
+            255
+          ]
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "7f320949-34a5-43a6-a9b7-3fb1fde11da4",
+      "name": "BrokenScriptObj",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            600,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            0,
+            255,
+            0,
+            255
+          ]
+        },
+        "Script": {
+          "script_path": "stress_test/scripts/NonExistent.py"
+        }
+      },
+      "children": []
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      30,
+      255
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+    "name": "FallingBox",
+    "components": {
+      "Transform": {
+        "position": [0, 0],
+        "rotation": 0,
+        "scale": [0.7, 0.7]
+      },
+      "SpriteRenderer": {
+        "sprite_path": "",
+        "tint": [255, 100, 50, 255],
+        "visible": true,
+        "layer": 1
+      },
+      "RigidBody": {
+        "mass": 1.0,
+        "body_type": "dynamic",
+        "friction": 0.5,
+        "elasticity": 0.5
+      },
+      "BoxCollider": {
+        "size": [100, 100],
+        "offset": [0, 0]
+      }
+    }
+}

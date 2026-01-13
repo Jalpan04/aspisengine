@@ -1,0 +1,47 @@
+{
+  "metadata": {},
+  "objects": [
+    {
+      "id": "obj1",
+      "name": "Logger Object",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ]
+        },
+        "SpriteRenderer": {
+          "sprite_path": ""
+        },
+        "Script": {
+          "script_path": "stress_test/scripts/LifecycleLogger.py"
+        }
+      }
+    },
+    {
+      "id": "cam",
+      "name": "Main Camera",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ]
+        },
+        "Camera": {
+          "is_main": true
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

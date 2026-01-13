@@ -1,0 +1,157 @@
+{
+  "metadata": {
+    "name": "09 Object Cycling"
+  },
+  "objects": [
+    {
+      "id": "8e2aa96d-1ef5-4c53-9336-656719c395dc",
+      "name": "Main Camera",
+      "active": true,
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ],
+          "rotation": 0,
+          "scale": [
+            1,
+            1
+          ]
+        },
+        "Camera": {
+          "is_main": true,
+          "width": 1000,
+          "height": 800
+        }
+      },
+      "children": []
+    },
+    {
+      "id": "floor",
+      "name": "Floor",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            580
+          ],
+          "scale": [
+            8,
+            0.4
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "static"
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            100,
+            100,
+            100,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "wall_left",
+      "name": "WallLeft",
+      "components": {
+        "Transform": {
+          "position": [
+            50,
+            300
+          ],
+          "scale": [
+            0.4,
+            6
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "static"
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            100,
+            100,
+            100,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "wall_right",
+      "name": "WallRight",
+      "components": {
+        "Transform": {
+          "position": [
+            750,
+            300
+          ],
+          "scale": [
+            0.4,
+            6
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            100,
+            100
+          ]
+        },
+        "RigidBody": {
+          "body_type": "static"
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "tint": [
+            100,
+            100,
+            100,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "734ebd93-8c89-4424-9464-d540e276f74d",
+      "name": "CycleManager",
+      "components": {
+        "Transform": {
+          "position": [
+            0,
+            0
+          ]
+        },
+        "Script": {
+          "script_path": "stress_test/scripts/ObjectCycler.py"
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

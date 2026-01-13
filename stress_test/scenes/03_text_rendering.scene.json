@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "name": "03 Text Rendering"
+  },
+  "objects": [
+    {
+      "id": "cam",
+      "name": "Main Camera",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ]
+        },
+        "Camera": {
+          "is_main": true,
+          "width": 800,
+          "height": 600
+        }
+      }
+    },
+    {
+      "id": "title",
+      "name": "Title Text",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            100
+          ]
+        },
+        "TextRenderer": {
+          "text": "Engine Text Test",
+          "font_size": 48,
+          "color": [
+            255,
+            255,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "subtitle",
+      "name": "Subtitle",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            180
+          ]
+        },
+        "TextRenderer": {
+          "text": "Verifying Font Rendering",
+          "font_size": 24,
+          "color": [
+            200,
+            200,
+            200,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "colored_text_1",
+      "name": "Red Text",
+      "components": {
+        "Transform": {
+          "position": [
+            200,
+            300
+          ]
+        },
+        "TextRenderer": {
+          "text": "RED TEXT",
+          "font_size": 32,
+          "color": [
+            255,
+            50,
+            50,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "colored_text_2",
+      "name": "Green Text",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            300
+          ]
+        },
+        "TextRenderer": {
+          "text": "GREEN TEXT",
+          "font_size": 32,
+          "color": [
+            50,
+            255,
+            50,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "colored_text_3",
+      "name": "Blue Text",
+      "components": {
+        "Transform": {
+          "position": [
+            600,
+            300
+          ]
+        },
+        "TextRenderer": {
+          "text": "BLUE TEXT",
+          "font_size": 32,
+          "color": [
+            50,
+            50,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "id": "tiny_text",
+      "name": "Tiny Text",
+      "components": {
+        "Transform": {
+          "position": [
+            400,
+            500
+          ]
+        },
+        "TextRenderer": {
+          "text": "Tiny text (12px)",
+          "font_size": 12,
+          "color": [
+            150,
+            150,
+            150,
+            255
+          ]
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

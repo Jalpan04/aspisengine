@@ -202,8 +202,11 @@ class ColorField(QPushButton):
 
 
 from editor.undo_redo import ChangeComponentCommand, AddComponentCommand, RemoveComponentCommand
+from PySide6.QtWidgets import QInputDialog
 
 class InspectorPanel(QWidget):
+    request_open_script = Signal(str)
+
     def __init__(self):
         super().__init__()
         self.setMinimumWidth(220)
@@ -442,12 +445,7 @@ class InspectorPanel(QWidget):
         size_field.value_committed.connect(lambda w, h: [self.update_component(obj, "Camera", "width", w), self.update_component(obj, "Camera", "height", h)])
         form.addRow(QLabel("Size:"), size_field)
 
-        # Zoom
-        zoom = data.get("zoom", 1.0)
-        zoom_field = FloatField(zoom)
-        zoom_field.value_edited.connect(lambda v: self.preview_component(obj, "Camera", "zoom", v))
-        zoom_field.value_committed.connect(lambda v: self.update_component(obj, "Camera", "zoom", v))
-        form.addRow(QLabel("Zoom:"), zoom_field)
+
         
         # Is Main
         is_main = data.get("is_main", True)
@@ -774,7 +772,8 @@ class InspectorPanel(QWidget):
         browse_btn = QPushButton("...")
         browse_btn.setFixedSize(24, 22)
         browse_btn.setStyleSheet("background: #333333; color: white; border: none;")
-        browse_btn.clicked.connect(lambda: self.pick_script(obj, path_label))
+        # browse_btn.clicked.connect(lambda: self.pick_script(obj, path_label)) # Old
+        browse_btn.clicked.connect(lambda: self.show_script_menu(obj, path_label, browse_btn, current_path))
         
         path_layout.addWidget(path_label)
         path_layout.addWidget(browse_btn)
@@ -835,6 +834,72 @@ class InspectorPanel(QWidget):
                 # To support undo properly, we should really update ChangeComponentCommand to support nested keys or make a generic SetPropertyCommand
                 # For now, let's just trigger scene load emit to save state
                 self.state.scene_loaded.emit()
+    
+    def show_script_menu(self, obj, label_widget, btn_widget, current_path):
+        from PySide6.QtWidgets import QMenu, QApplication
+        menu = QMenu(self)
+        
+        # New
+        act_new = menu.addAction("New Script...")
+        act_new.triggered.connect(lambda: self.create_new_script(obj, label_widget))
+        
+        # Import
+        act_import = menu.addAction("Import Script...")
+        act_import.triggered.connect(lambda: self.pick_script(obj, label_widget))
+        
+        menu.addSeparator()
+        
+        # Edit
+        act_edit = menu.addAction("Edit Script")
+        if not current_path:
+            act_edit.setEnabled(False)
+        else:
+            act_edit.triggered.connect(lambda: self.request_open_script.emit(current_path))
+            
+        # Show Menu
+        menu.exec(btn_widget.mapToGlobal(QApplication.style().visualRect(Qt.LeftToRight, btn_widget.rect(), btn_widget.rect()).bottomLeft()))
+
+    def create_new_script(self, obj, label_widget):
+        name, ok = QInputDialog.getText(self, "New Script", "Script Name (without .py):")
+        if ok and name:
+            filename = f"{name}.py"
+            dest_dir = os.path.join(self.state.project_root, "scripts")
+            os.makedirs(dest_dir, exist_ok=True)
+            dest_path = os.path.join(dest_dir, filename)
+            
+            if os.path.exists(dest_path):
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.warning(self, "Error", "File already exists!")
+                return
+                
+            # Create Template
+            template = (
+                "from runtime.api import Script\n\n"
+                f"class {name}(Script):\n"
+                "    def start(self):\n"
+                "        pass\n\n"
+                "    def update(self, dt):\n"
+                "        pass\n"
+            )
+            
+            try:
+                with open(dest_path, 'w') as f:
+                    f.write(template)
+                
+                rel_path = os.path.relpath(dest_path, self.state.project_root)
+                
+                if "Script" not in obj.get("components", {}): obj["components"]["Script"] = {}
+                obj["components"]["Script"]["script_path"] = rel_path
+                obj["components"]["Script"]["properties"] = {} # clear old props
+                
+                self.state.scene_loaded.emit()
+                label_widget.setText(filename)
+                
+                # Open it
+                self.request_open_script.emit(rel_path)
+                
+            except Exception as e:
+                print(f"Failed to create script: {e}")
 
     def pick_script(self, obj, label_widget):
         path, _ = QFileDialog.getOpenFileName(
@@ -922,12 +987,7 @@ class InspectorPanel(QWidget):
         size_field.value_committed.connect(lambda w, h: [self.update_component(obj, "Camera", "width", w), self.update_component(obj, "Camera", "height", h)])
         form.addRow(QLabel("Size:"), size_field)
 
-        # Zoom
-        zoom = data.get("zoom", 1.0)
-        zoom_field = FloatField(zoom)
-        zoom_field.value_edited.connect(lambda v: self.preview_component(obj, "Camera", "zoom", v))
-        zoom_field.value_committed.connect(lambda v: self.update_component(obj, "Camera", "zoom", v))
-        form.addRow(QLabel("Zoom:"), zoom_field)
+
         
         # Is Main
         is_main = data.get("is_main", True)
