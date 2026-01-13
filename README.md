@@ -1,6 +1,6 @@
 # Aspis Engine
 
-![Aspis Engine logo](aspis.png)
+![Aspis Engine logo](logo.png)
 
 **The Lightweight Python Game Engine**
 
