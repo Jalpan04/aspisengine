@@ -1,0 +1,7 @@
+# Ignore HTML and TeX files in language stats
+*.html linguist-vendored
+*.tex linguist-vendored
+*.css linguist-vendored
+
+# Optional: Force Python detection (usually not needed if you ignore the others)
+*.py linguist-detectable
