@@ -1,15 +1,6 @@
-# IGNORE ALL TeX/LaTeX FILES
-*.tex linguist-vendored
-*.sty linguist-vendored
-*.cls linguist-vendored
-*.bib linguist-vendored
-*.aux linguist-vendored
-*.toc linguist-vendored
-*.out linguist-vendored
-*.dtx linguist-vendored
-*.ins linguist-vendored
-*.ltx linguist-vendored
-*.bbl linguist-vendored
+# 1. Ignore EVERYTHING first
+* linguist-vendored
 
-# FORCE PYTHON DETECTION
-*.py linguist-detectable=true
+# 2. Un-ignore Python files so they are the only thing counted
+*.py linguist-vendored=false
+*.py linguist-detectable
