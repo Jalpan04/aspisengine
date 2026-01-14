@@ -1,6 +1,15 @@
-# Ignore all TeX and related files
+# IGNORE ALL TeX/LaTeX FILES
 *.tex linguist-vendored
 *.sty linguist-vendored
 *.cls linguist-vendored
 *.bib linguist-vendored
 *.aux linguist-vendored
+*.toc linguist-vendored
+*.out linguist-vendored
+*.dtx linguist-vendored
+*.ins linguist-vendored
+*.ltx linguist-vendored
+*.bbl linguist-vendored
+
+# FORCE PYTHON DETECTION
+*.py linguist-detectable=true
