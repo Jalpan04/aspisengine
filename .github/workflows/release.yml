@@ -1,6 +1,5 @@
 name: Build and Release
 
-# Trigger on every push to main / master
 on:
   push:
     branches:
@@ -8,7 +7,7 @@ on:
       - master
 
 permissions:
-  contents: write   # required to create releases and push the baked version.py
+  contents: write
 
 jobs:
   build-and-release:
@@ -21,31 +20,38 @@ jobs:
 
       # ── 2. Compute full version ──────────────────────────────────────────
       #   version.py holds MAJOR.MINOR (e.g. "1.0")
-      #   PATCH = github.run_number   → unique, always incrementing on every push
-      #   Full version = "1.0.42"
+      #   PATCH = github.run_number  →  guaranteed unique on every push
+      #   Full version = e.g. "1.0.5"
       - name: Compute version
         id: ver
         shell: pwsh
         run: |
-          $base = python -c "import re; m=re.search(r'__version__\s*=\s*[\"'']([^\"'']+)[\"'']', open('version.py').read()); print(m.group(1))"
-          $patch = "${{ github.run_number }}"
-          $full  = "$base.$patch"
-          $tag   = "v$full"
-          echo "BASE=$base"   >> $env:GITHUB_OUTPUT
-          echo "FULL=$full"   >> $env:GITHUB_OUTPUT
-          echo "TAG=$tag"     >> $env:GITHUB_OUTPUT
-          echo "Build version: $full  (tag: $tag)"
+          # Read version.py with PowerShell — no subprocess quoting issues
+          $content = Get-Content version.py -Raw
+          $match   = [regex]::Match($content, '__version__\s*=\s*[''"]([^''"]+)[''"]')
+          $base    = $match.Groups[1].Value
+          $patch   = "${{ github.run_number }}"
+          $full    = "$base.$patch"
+          $tag     = "v$full"
+          Write-Output "BASE=$base"  | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Output "FULL=$full"  | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Output "TAG=$tag"    | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Build version: $full  (tag: $tag)"
 
       # ── 3. Bake the full version into version.py before building ─────────
-      #   This makes the exe report the correct version at runtime.
       - name: Bake version into version.py
         shell: pwsh
         run: |
-          $full = "${{ steps.ver.outputs.FULL }}"
+          $full    = "${{ steps.ver.outputs.FULL }}"
           $content = Get-Content version.py -Raw
-          $content = $content -replace '(__version__\s*=\s*[\"''])([^\"'']+)([\"''])', "`$1$full`$3"
-          Set-Content version.py $content
-          echo "version.py is now:"
+          # Replace the version string value in-place
+          $content = [regex]::Replace(
+            $content,
+            '(__version__\s*=\s*[''"])([^''"]+)([''"])',
+            "`${1}$full`${3}"
+          )
+          Set-Content -Path version.py -Value $content -NoNewline
+          Write-Host "version.py is now:"
           Get-Content version.py
 
       # ── 4. Set up Python ─────────────────────────────────────────────────
@@ -65,12 +71,14 @@ jobs:
 
       # ── 6. Install dependencies ───────────────────────────────────────────
       - name: Install dependencies
+        shell: pwsh
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller PySide6 pygame pymunk numpy
 
       # ── 7. Build the exe ─────────────────────────────────────────────────
       - name: Build with PyInstaller
+        shell: pwsh
         run: pyinstaller aspis_onefile.spec --noconfirm
 
       # ── 8. Zip ───────────────────────────────────────────────────────────
@@ -80,7 +88,7 @@ jobs:
           $tag = "${{ steps.ver.outputs.TAG }}"
           Compress-Archive -Path dist\AspisEngine.exe `
                            -DestinationPath "AspisEngine-$tag-windows-x64.zip"
-          echo "Created: AspisEngine-$tag-windows-x64.zip"
+          Write-Host "Created: AspisEngine-$tag-windows-x64.zip"
 
       # ── 9. Create GitHub Release ──────────────────────────────────────────
       - name: Create GitHub Release
@@ -94,7 +102,7 @@ jobs:
             Automated release built from commit [${{ github.sha }}](../../commit/${{ github.sha }}).
 
             **Branch:** `${{ github.ref_name }}`
-            **Build:**  #${{ github.run_number }}
+            **Build:** #${{ github.run_number }}
 
             ### Download
             **AspisEngine-${{ steps.ver.outputs.TAG }}-windows-x64.zip**
