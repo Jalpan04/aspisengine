@@ -16,7 +16,8 @@ venv/
 # Build and distribution directories
 build/
 dist/
-*.spec
+# Keep the hand-crafted spec committed; ignore auto-generated ones
+!aspis_onefile.spec
 
 # Local workspace/agent files
 .agent/

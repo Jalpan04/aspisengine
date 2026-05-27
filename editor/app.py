@@ -59,6 +59,11 @@ class MainWindow(QMainWindow):
         # Tab 2: Script Editor
         self.code_editor = CodeEditor()
         self.central_tabs.addTab(self.code_editor, "Script")
+
+        # Tab 3: Animation Workspace
+        from editor.animator_panel import AnimatorPanel
+        self.animator_panel = AnimatorPanel()
+        self.central_tabs.addTab(self.animator_panel, "Animation")
         
         # Connect Save Feedback
         self.code_editor.file_saved.connect(lambda p: self.statusBar().showMessage(f"Saved: {os.path.basename(p)}", 3000))
@@ -79,6 +84,7 @@ class MainWindow(QMainWindow):
         inspector_panel = InspectorPanel()
         inspector_panel.setMinimumWidth(280)
         inspector_panel.request_open_script.connect(self.open_script)
+        inspector_panel.request_open_animator.connect(lambda: self.central_tabs.setCurrentWidget(self.animator_panel))
         self.dock_inspector.setWidget(inspector_panel)
         self.dock_inspector.setAllowedAreas(Qt.RightDockWidgetArea)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock_inspector)

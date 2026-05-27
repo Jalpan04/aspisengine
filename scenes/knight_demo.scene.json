@@ -1,0 +1,146 @@
+{
+  "metadata": {
+    "name": "Knight Demo Scene",
+    "version": 1
+  },
+  "objects": [
+    {
+      "id": "camera-id-2345",
+      "name": "Main Camera",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "Camera": {
+          "width": 1280,
+          "height": 720,
+          "is_main": true
+        }
+      }
+    },
+    {
+      "id": "knight-id-6789",
+      "name": "Knight Player",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            156.26872421967528,
+            0.5475104873474947
+          ],
+          "rotation": 0.0,
+          "scale": [
+            4.0,
+            4.0
+          ],
+          "parent_id": null
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "layer": 1,
+          "visible": true,
+          "tint": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        "Animator": {
+          "sprite_sheet": "assets/knight.png",
+          "frame_width": 32,
+          "frame_height": 32,
+          "current_state": "idle",
+          "animations": {
+            "idle": {
+              "name": "idle",
+              "frames": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "frame_rate": 6.0,
+              "loop": true
+            },
+            "run": {
+              "name": "run",
+              "frames": [
+                40,
+                41,
+                42,
+                43,
+                44,
+                45,
+                46,
+                47,
+                48
+              ],
+              "frame_rate": 14.0,
+              "loop": true
+            }
+          },
+          "parameters": {
+            "speed": {
+              "type": "float",
+              "value": 0.0
+            },
+            "height": {
+              "type": "float",
+              "value": 0.0
+            }
+          },
+          "transitions": [
+            {
+              "from_state": "idle",
+              "to_state": "run",
+              "conditions": [
+                {
+                  "parameter": "speed",
+                  "operator": "greater",
+                  "value": 0.5
+                }
+              ]
+            },
+            {
+              "from_state": "run",
+              "to_state": "idle",
+              "conditions": [
+                {
+                  "parameter": "speed",
+                  "operator": "less",
+                  "value": 0.5
+                }
+              ]
+            }
+          ],
+          "playing": false
+        },
+        "Script": {
+          "script_path": "scripts/AnimatedPlayer.py"
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

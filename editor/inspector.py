@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QScrollArea, QFrame,
     QFormLayout, QLineEdit, QHBoxLayout, QPushButton, QFileDialog,
-    QCheckBox, QMenu, QSlider, QSizePolicy, QGridLayout
+    QCheckBox, QMenu, QSlider, QSizePolicy, QGridLayout, QComboBox
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QDoubleValidator
@@ -283,9 +283,9 @@ class BitmaskGrid(QWidget):
         else:
             self.value = int(value) & 0xFFFFFFFF
         
-        main_layout = QHBoxLayout(self)
+        main_layout = QGridLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(4)  # Group spacing between blocks of 8
+        main_layout.setSpacing(6)  # Group spacing between blocks of 8
         
         self.buttons = {}  # bit_index (0-31) -> QPushButton
         
@@ -331,7 +331,9 @@ class BitmaskGrid(QWidget):
                 self.buttons[bit_idx] = btn
                 btn.clicked.connect(lambda _, b=bit_idx: self._on_button_clicked(b))
                 
-            main_layout.addWidget(block_widget)
+            row_idx = block_idx // 2
+            col_idx = block_idx % 2
+            main_layout.addWidget(block_widget, row_idx, col_idx)
             
         self._update_styles()
         
@@ -404,11 +406,97 @@ class BitmaskGrid(QWidget):
         self.block_updates = False
 
 
+from PySide6.QtGui import QPainter, QPolygon, QBrush, QPen, QColor
+from PySide6.QtCore import QPoint
+
+class PlaybackButton(QPushButton):
+    """A premium custom square button that draws vector icon shapes (Play, Pause, Prev, Next) with QPainter."""
+    TYPE_PLAY = "play"
+    TYPE_PAUSE = "pause"
+    TYPE_PREV = "prev"
+    TYPE_NEXT = "next"
+    
+    def __init__(self, btn_type, parent=None):
+        super().__init__(parent)
+        self.btn_type = btn_type
+        self.setFixedSize(24, 24)
+        self.setCursor(Qt.PointingHandCursor)
+        
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        rect = self.rect()
+        is_hovered = self.underMouse()
+        is_enabled = self.isEnabled()
+        
+        bg_color = QColor(Theme.BG_CARD)
+        border_color = QColor(Theme.BORDER_DEFAULT)
+        
+        if not is_enabled:
+            bg_color = QColor(Theme.BG_INPUT)
+            icon_color = QColor(Theme.TEXT_MUTED)
+        else:
+            if self.btn_type == self.TYPE_PAUSE:
+                bg_color = QColor(Theme.ACCENT)
+                border_color = QColor(Theme.ACCENT)
+                icon_color = QColor(Theme.BG_WINDOW)
+                if is_hovered:
+                    bg_color = QColor(Theme.ACCENT_HOVER)
+                    border_color = QColor(Theme.ACCENT_HOVER)
+            else:
+                if is_hovered:
+                    bg_color = QColor(Theme.BG_HOVER)
+                    border_color = QColor(Theme.BORDER_FOCUS)
+                icon_color = QColor(Theme.TEXT_HIGHLIGHT)
+                
+        painter.setBrush(bg_color)
+        painter.setPen(QPen(border_color, 1))
+        painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), 2, 2)
+        
+        cx = rect.width() / 2
+        cy = rect.height() / 2
+        
+        painter.setBrush(QBrush(icon_color))
+        painter.setPen(Qt.NoPen)
+        
+        if self.btn_type == self.TYPE_PLAY:
+            poly = QPolygon([
+                QPoint(int(cx - 3), int(cy - 5)),
+                QPoint(int(cx - 3), int(cy + 5)),
+                QPoint(int(cx + 5), int(cy))
+            ])
+            painter.drawPolygon(poly)
+            
+        elif self.btn_type == self.TYPE_PAUSE:
+            painter.drawRect(int(cx - 4), int(cy - 5), 3, 10)
+            painter.drawRect(int(cx + 1), int(cy - 5), 3, 10)
+            
+        elif self.btn_type == self.TYPE_PREV:
+            painter.drawRect(int(cx - 5), int(cy - 5), 2, 10)
+            poly = QPolygon([
+                QPoint(int(cx + 4), int(cy - 5)),
+                QPoint(int(cx + 4), int(cy + 5)),
+                QPoint(int(cx - 2), int(cy))
+            ])
+            painter.drawPolygon(poly)
+            
+        elif self.btn_type == self.TYPE_NEXT:
+            painter.drawRect(int(cx + 3), int(cy - 5), 2, 10)
+            poly = QPolygon([
+                QPoint(int(cx - 4), int(cy - 5)),
+                QPoint(int(cx - 4), int(cy + 5)),
+                QPoint(int(cx + 2), int(cy))
+            ])
+            painter.drawPolygon(poly)
+
+
 from editor.undo_redo import ChangeComponentCommand, AddComponentCommand, RemoveComponentCommand
 from PySide6.QtWidgets import QInputDialog
 
 class InspectorPanel(QWidget):
     request_open_script = Signal(str)
+    request_open_animator = Signal()
 
     def __init__(self):
         super().__init__()
@@ -421,6 +509,7 @@ class InspectorPanel(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.container = QWidget()
         self.content_layout = QVBoxLayout(self.container)
@@ -613,16 +702,20 @@ class InspectorPanel(QWidget):
                 self.add_background_editor(comp_data, obj)
             elif comp_name == "TextRenderer":
                 self.add_text_renderer_editor(comp_data, obj)
+            elif comp_name == "Animator" or comp_name == "Animation":
+                self.add_animator_editor(comp_data, obj)
 
         # Determine available components
         available = []
         all_components = [
             "Transform", "SpriteRenderer", "Script", "RigidBody", 
-            "BoxCollider", "CircleCollider", "Camera", "LightSource", "Background", "TextRenderer"
+            "BoxCollider", "CircleCollider", "Camera", "LightSource", "Background", "TextRenderer", "Animation"
         ]
         
         for c in all_components:
-            if c not in components:
+            # Map display name back to internal key for availability check
+            internal = "Animator" if c == "Animation" else c
+            if internal not in components:
                 available.append(c)
         
         if not available:
@@ -726,7 +819,110 @@ class InspectorPanel(QWidget):
         form_widget = QWidget()
         form_widget.setLayout(form)
         self.content_layout.addWidget(form_widget)
-    
+
+    def add_animator_editor(self, data, obj):
+        if data is None: data = {}
+        self.content_layout.addWidget(self.create_header("Animation", obj, "Animator"))
+
+        form = QFormLayout()
+        form.setContentsMargins(*Theme.MARGIN_STANDARD)
+        form.setSpacing(Theme.SPACING_STANDARD)
+        form.setLabelAlignment(Qt.AlignRight)
+
+        # Sprite Sheet
+        path_row = QHBoxLayout()
+        current_path = data.get("sprite_sheet", "")
+        path_label = QLabel(os.path.basename(current_path) if current_path else "(none)")
+        path_label.setStyleSheet(f"color: {Theme.TEXT_SECONDARY}; font-size: {Theme.FONT_SMALL};")
+        browse_btn = QPushButton("...")
+        browse_btn.setFixedSize(24, 20)
+        browse_btn.clicked.connect(lambda: self.pick_image_generic(obj, "Animator", "sprite_sheet", path_label))
+        path_row.addWidget(path_label)
+        path_row.addWidget(browse_btn)
+        form.addRow(QLabel("Sprite Sheet:"), path_row)
+
+        # Frame Width
+        fw_val = data.get("frame_width", 32)
+        fw_field = FloatField(fw_val, min_val=1)
+        fw_field.value_committed.connect(lambda v, old: self.update_component(obj, "Animator", "frame_width", int(v)))
+        form.addRow(QLabel("Frame Width:"), fw_field)
+        self.active_editors[("Animator", "frame_width")] = fw_field
+
+        # Frame Height
+        fh_val = data.get("frame_height", 32)
+        fh_field = FloatField(fh_val, min_val=1)
+        fh_field.value_committed.connect(lambda v, old: self.update_component(obj, "Animator", "frame_height", int(v)))
+        form.addRow(QLabel("Frame Height:"), fh_field)
+        self.active_editors[("Animator", "frame_height")] = fh_field
+
+        # Play / Pause & Frame Stepping Controls
+        control_row = QHBoxLayout()
+        control_row.setContentsMargins(0, 0, 0, 0)
+        control_row.setSpacing(4)
+        
+        is_playing = data.get("playing", True)
+        play_btn = PlaybackButton(PlaybackButton.TYPE_PAUSE if is_playing else PlaybackButton.TYPE_PLAY)
+        prev_btn = PlaybackButton(PlaybackButton.TYPE_PREV)
+        next_btn = PlaybackButton(PlaybackButton.TYPE_NEXT)
+        
+        prev_btn.setToolTip("Previous Frame")
+        next_btn.setToolTip("Next Frame")
+        
+        prev_btn.setEnabled(not is_playing)
+        next_btn.setEnabled(not is_playing)
+        
+        def toggle_play():
+            nonlocal is_playing
+            is_playing = not is_playing
+            self.update_component(obj, "Animator", "playing", is_playing)
+            play_btn.btn_type = PlaybackButton.TYPE_PAUSE if is_playing else PlaybackButton.TYPE_PLAY
+            prev_btn.setEnabled(not is_playing)
+            next_btn.setEnabled(not is_playing)
+            play_btn.update()
+            prev_btn.update()
+            next_btn.update()
+            self.state.scene_updated.emit()
+            
+        def get_frames_count():
+            curr_state = data.get("current_state", "")
+            if not curr_state: return 1
+            anim_info = data.get("animations", {}).get(curr_state, {})
+            return len(anim_info.get("frames", [0]))
+
+        def step_prev():
+            live = obj.get("components", {}).get("Animator", {})
+            curr_idx = live.get("frame_idx", 0)
+            count = get_frames_count()
+            new_idx = (curr_idx - 1) % count if count > 0 else 0
+            obj["components"]["Animator"]["frame_idx"] = new_idx
+            self.state.scene_updated.emit()
+
+        def step_next():
+            live = obj.get("components", {}).get("Animator", {})
+            curr_idx = live.get("frame_idx", 0)
+            count = get_frames_count()
+            new_idx = (curr_idx + 1) % count if count > 0 else 0
+            obj["components"]["Animator"]["frame_idx"] = new_idx
+            self.state.scene_updated.emit()
+            
+        play_btn.clicked.connect(toggle_play)
+        prev_btn.clicked.connect(step_prev)
+        next_btn.clicked.connect(step_next)
+        
+        control_row.addWidget(prev_btn)
+        control_row.addWidget(play_btn)
+        control_row.addWidget(next_btn)
+        control_row.addStretch()
+        
+        control_widget = QWidget()
+        control_widget.setLayout(control_row)
+        form.addRow(QLabel("Animation:"), control_widget)
+
+        # Form widget assembly
+        form_widget = QWidget()
+        form_widget.setLayout(form)
+        self.content_layout.addWidget(form_widget)
+
     def pick_image_generic(self, obj, comp_name, key, label_widget):
         current_val = obj.get("components", {}).get(comp_name, {}).get(key, "")
         
@@ -856,7 +1052,16 @@ class InspectorPanel(QWidget):
         path_row.setSpacing(Theme.SPACING_STANDARD)
 
         current_path = data.get("sprite_path", "")
-        path_label = QLabel(os.path.basename(current_path) if current_path else "(none)")
+        anim_data = obj.get("components", {}).get("Animator", {})
+        anim_sheet = anim_data.get("sprite_sheet", "")
+        
+        display_text = "(none)"
+        if current_path:
+            display_text = os.path.basename(current_path)
+        elif anim_sheet:
+            display_text = f"{os.path.basename(anim_sheet)} (Animator)"
+            
+        path_label = QLabel(display_text)
         path_label.setStyleSheet(f"color: {Theme.TEXT_SECONDARY}; font-size: {Theme.FONT_SMALL};")
 
         browse_btn = QPushButton("...")
@@ -1305,6 +1510,9 @@ class InspectorPanel(QWidget):
         menu.exec(button.mapToGlobal(button.rect().bottomLeft()))
 
     def add_component(self, obj, comp_name):
+        # Map display names to internal component keys
+        display_to_internal = {"Animation": "Animator"}
+        comp_name = display_to_internal.get(comp_name, comp_name)
         defaults = {
             "SpriteRenderer": {"sprite_path": "", "layer": 1, "visible": True, "tint": [255, 255, 255, 255]},
             "BoxCollider": {"size": [50.0, 50.0], "offset": [0.0, 0.0], "is_trigger": False, "category_bitmask": 1, "collision_mask": 4294967295},
@@ -1314,13 +1522,15 @@ class InspectorPanel(QWidget):
             "Camera": {"width": 800.0, "height": 600.0, "zoom": 1.0, "is_main": True},
             "LightSource": {"color": [255, 255, 255, 255], "intensity": 1.0, "radius": 200.0, "type": "point", "cast_shadows": True},
             "Background": {"sprite_path": "", "color": [255, 255, 255, 255], "loop_x": False, "loop_y": False, "scroll_speed": [0.0, 0.0], "fixed": True, "layer": 1},
-            "TextRenderer": {"text": "Text", "font_size": 24.0, "color": [255, 255, 255, 255], "layer": 1}
+            "TextRenderer": {"text": "Text", "font_size": 24.0, "color": [255, 255, 255, 255], "layer": 1},
+            "Animator": {"sprite_sheet": "", "frame_width": 32, "frame_height": 32, "current_state": "", "animations": {}, "parameters": {}, "transitions": []}
         }
         if comp_name in defaults:
             cmd = AddComponentCommand(obj, comp_name, defaults[comp_name])
             self.state.undo_stack.push(cmd)
             cmd.redo()
             self.state.select_object(obj.get("id"))  # Refresh inspector
+
 
     def add_circle_collider_editor(self, data, obj):
         if data is None: data = {}

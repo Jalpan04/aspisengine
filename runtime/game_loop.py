@@ -279,12 +279,33 @@ class GameRuntime:
                 if obj.name == name:
                     return obj
             return None
+
+        def play_anim(name):
+            anim_data = script_instance.game_object.components.get("Animator")
+            if anim_data:
+                anim_data["current_state"] = name
+                anim_data["_current_frame_index"] = 0
+                anim_data["_elapsed_time"] = 0.0
+        
+        def set_param(p_name, val):
+            anim_data = script_instance.game_object.components.get("Animator")
+            if anim_data and "_parameters" in anim_data:
+                anim_data["_parameters"][p_name] = val
+                
+        def get_param(p_name):
+            anim_data = script_instance.game_object.components.get("Animator")
+            if anim_data and "_parameters" in anim_data:
+                return anim_data["_parameters"].get(p_name)
+            return None
         
         script_instance.instantiate = inst
         script_instance.destroy = dest
         script_instance.load_scene = load
         script_instance.play_sound = play_snd
         script_instance.find_object = find_obj
+        script_instance.play_animation = play_anim
+        script_instance.set_anim_parameter = set_param
+        script_instance.get_anim_parameter = get_param
 
 
 
@@ -313,6 +334,9 @@ class GameRuntime:
                 
                 # Scripts Step (Fixed Update)
                 self.update_scripts(FIXED_DT)
+                
+                # Animators Step (Update states and frame indices)
+                self.update_animators(FIXED_DT)
                 
                 # Processing Queued Lifecycle Events
                 self.process_lifecycle_events()
@@ -465,6 +489,111 @@ class GameRuntime:
             self.active_scripts.remove(script)
             print(f"SANDBOX: Disabled script '{type(script).__name__}' on '{script.game_object.name}' due to error.")
 
+    def update_animators(self, dt):
+        for go in self.objects:
+            anim_data = go.components.get("Animator")
+            if not anim_data:
+                continue
+            
+            # 1. Update State Transitions based on current parameters
+            current_state = anim_data.get("current_state", "")
+            animations = anim_data.get("animations", {})
+            transitions = anim_data.get("transitions", [])
+            parameters = anim_data.get("_parameters", {})
+            
+            state_changed = False
+            for trans in transitions:
+                if trans.get("from_state") != current_state:
+                    continue
+                
+                # Evaluate conditions
+                conditions = trans.get("conditions", [])
+                conditions_met = True
+                
+                for cond in conditions:
+                    p_name = cond.get("parameter")
+                    p_op = cond.get("operator", "equals")
+                    target_val = cond.get("value")
+                    
+                    if p_name not in parameters:
+                        conditions_met = False
+                        break
+                    
+                    current_val = parameters[p_name]
+                    
+                    # Evaluate based on operator
+                    if p_op == "greater":
+                        if not (isinstance(current_val, (int, float)) and isinstance(target_val, (int, float)) and current_val > target_val):
+                            conditions_met = False
+                    elif p_op == "less":
+                        if not (isinstance(current_val, (int, float)) and isinstance(target_val, (int, float)) and current_val < target_val):
+                            conditions_met = False
+                    elif p_op == "equals":
+                        if current_val != target_val:
+                            conditions_met = False
+                    elif p_op == "not_equals":
+                        if current_val == target_val:
+                            conditions_met = False
+                    elif p_op == "true":
+                        if current_val is not True:
+                            conditions_met = False
+                    elif p_op == "false":
+                        if current_val is not False:
+                            conditions_met = False
+                    elif p_op == "fired":
+                        # Triggers: if True, then condition met
+                        if not current_val:
+                            conditions_met = False
+                    else:
+                        conditions_met = False
+                
+                if conditions_met:
+                    # Reset trigger parameters
+                    for cond in conditions:
+                        p_name = cond.get("parameter")
+                        design_param = anim_data.get("parameters", {}).get(p_name, {})
+                        if design_param.get("type") == "trigger":
+                            parameters[p_name] = False
+                    
+                    # Transition to new state
+                    anim_data["current_state"] = trans.get("to_state")
+                    anim_data["_current_frame_index"] = 0
+                    anim_data["_elapsed_time"] = 0.0
+                    state_changed = True
+                    break
+            
+            # 2. Update frame advancement for the active animation
+            current_state = anim_data.get("current_state", "")
+            if not current_state or current_state not in animations:
+                continue
+                
+            anim_info = animations[current_state]
+            frames = anim_info.get("frames", [0])
+            if not frames:
+                continue
+                
+            fps = anim_info.get("frame_rate", 10.0)
+            if fps <= 0.0:
+                continue
+                
+            sec_per_frame = 1.0 / fps
+            anim_data["_elapsed_time"] += dt
+            
+            if anim_data["_elapsed_time"] >= sec_per_frame:
+                steps = int(anim_data["_elapsed_time"] / sec_per_frame)
+                anim_data["_elapsed_time"] -= steps * sec_per_frame
+                
+                new_idx = anim_data["_current_frame_index"] + steps
+                loop = anim_info.get("loop", True)
+                
+                if new_idx >= len(frames):
+                    if loop:
+                        anim_data["_current_frame_index"] = new_idx % len(frames)
+                    else:
+                        anim_data["_current_frame_index"] = len(frames) - 1
+                else:
+                    anim_data["_current_frame_index"] = new_idx
+
     def load_script(self, script_path, game_object):
         """Dynamically load a script file and instantiate its Script class."""
         try:
@@ -593,6 +722,31 @@ class GameRuntime:
 
                 if "LightSource" in comps:
                     go.components["LightSource"] = comps["LightSource"]
+
+                if "Animator" in comps:
+                    anim_data = comps["Animator"]
+                    go.components["Animator"] = anim_data
+                    
+                    # Initialize runtime variables in component dictionary
+                    anim_data["_current_frame_index"] = 0
+                    anim_data["_elapsed_time"] = 0.0
+                    anim_data["_parameters"] = {}
+                    
+                    # Pre-populate parameters from design values
+                    design_params = anim_data.get("parameters", {})
+                    for p_name, p_info in design_params.items():
+                        anim_data["_parameters"][p_name] = p_info.get("value")
+                    
+                    # Load sheet
+                    sheet_path = anim_data.get("sprite_sheet")
+                    if sheet_path:
+                        full_path = os.path.join(PROJECT_ROOT, sheet_path)
+                        if full_path not in self.sprites:
+                            if os.path.exists(full_path):
+                                self.sprites[full_path] = pygame.image.load(full_path).convert_alpha()
+                            else:
+                                print(f"Warning: Sprite Sheet not found: {full_path}")
+                                self.sprites[full_path] = None
 
                 self.objects.append(go)
 
@@ -787,26 +941,69 @@ class GameRuntime:
             screen_y = (pos[1] - cam_y) + center_y
 
             sprite_data = go.components.get("SpriteRenderer")
-            if sprite_data and sprite_data.get("visible", True):
-                path = sprite_data.get("sprite_path")
-                # Skip the fallback box if this object is a light source
-                if not path and "LightSource" in go.components:
-                    continue
+            anim_data = go.components.get("Animator")
+            
+            if (sprite_data and sprite_data.get("visible", True)) or anim_data:
                 img = None
                 
-                if not path:
-                    if "CircleCollider" in go.components:
-                        img = pygame.Surface((100, 100), pygame.SRCALPHA)
-                        pygame.draw.circle(img, (255, 255, 255), (50, 50), 50)
+                # Check for Animator override first
+                if anim_data:
+                    sheet_path = anim_data.get("sprite_sheet")
+                    full_sheet_path = os.path.join(PROJECT_ROOT, sheet_path) if sheet_path else None
+                    
+                    if full_sheet_path and full_sheet_path in self.sprites:
+                        sheet_img = self.sprites[full_sheet_path]
+                        if sheet_img:
+                            fw = anim_data.get("frame_width", 32)
+                            fh = anim_data.get("frame_height", 32)
+                            
+                            current_state = anim_data.get("current_state", "")
+                            animations = anim_data.get("animations", {})
+                            
+                            frames = [0]
+                            if current_state in animations:
+                                frames = animations[current_state].get("frames", [0])
+                            
+                            frame_idx = anim_data.get("_current_frame_index", 0)
+                            if frame_idx >= len(frames):
+                                frame_idx = 0
+                            
+                            frame_val = frames[frame_idx] if frames else 0
+                            
+                            cols = sheet_img.get_width() // fw if fw > 0 else 1
+                            cols = max(1, cols)
+                            
+                            row = frame_val // cols
+                            col = frame_val % cols
+                            
+                            src_rect = pygame.Rect(col * fw, row * fh, fw, fh)
+                            src_rect = src_rect.clip(sheet_img.get_rect())
+                            if src_rect.width > 0 and src_rect.height > 0:
+                                img = sheet_img.subsurface(src_rect)
+                
+                # Fallback to SpriteRenderer static sprite if no Animator image was loaded
+                if not img and sprite_data and sprite_data.get("visible", True):
+                    path = sprite_data.get("sprite_path")
+                    if not path and "LightSource" in go.components:
+                        continue
+                        
+                    if not path:
+                        if "CircleCollider" in go.components:
+                            img = pygame.Surface((100, 100), pygame.SRCALPHA)
+                            pygame.draw.circle(img, (255, 255, 255), (50, 50), 50)
+                        else:
+                            img = pygame.Surface((100, 100), pygame.SRCALPHA)
+                            img.fill((255, 255, 255))
                     else:
-                        img = pygame.Surface((100, 100), pygame.SRCALPHA)
-                        img.fill((255, 255, 255))
-                elif path in self.sprites:
-                    img = self.sprites[path]
+                        full_sprite_path = os.path.join(PROJECT_ROOT, path)
+                        if full_sprite_path in self.sprites:
+                            img = self.sprites[full_sprite_path]
                 
                 if img:
                     scale_x, scale_y = scale[0], scale[1]
-                    tint = sprite_data.get("tint", [255, 255, 255, 255])
+                    tint = [255, 255, 255, 255]
+                    if sprite_data:
+                        tint = sprite_data.get("tint", [255, 255, 255, 255])
                     
                     if tint != [255, 255, 255, 255]:
                         img = img.copy()

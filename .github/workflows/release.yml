@@ -1,0 +1,108 @@
+name: Build and Release
+
+# Trigger on every push to main / master
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write   # required to create releases and push the baked version.py
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Compute full version ──────────────────────────────────────────
+      #   version.py holds MAJOR.MINOR (e.g. "1.0")
+      #   PATCH = github.run_number   → unique, always incrementing on every push
+      #   Full version = "1.0.42"
+      - name: Compute version
+        id: ver
+        shell: pwsh
+        run: |
+          $base = python -c "import re; m=re.search(r'__version__\s*=\s*[\"'']([^\"'']+)[\"'']', open('version.py').read()); print(m.group(1))"
+          $patch = "${{ github.run_number }}"
+          $full  = "$base.$patch"
+          $tag   = "v$full"
+          echo "BASE=$base"   >> $env:GITHUB_OUTPUT
+          echo "FULL=$full"   >> $env:GITHUB_OUTPUT
+          echo "TAG=$tag"     >> $env:GITHUB_OUTPUT
+          echo "Build version: $full  (tag: $tag)"
+
+      # ── 3. Bake the full version into version.py before building ─────────
+      #   This makes the exe report the correct version at runtime.
+      - name: Bake version into version.py
+        shell: pwsh
+        run: |
+          $full = "${{ steps.ver.outputs.FULL }}"
+          $content = Get-Content version.py -Raw
+          $content = $content -replace '(__version__\s*=\s*[\"''])([^\"'']+)([\"''])', "`$1$full`$3"
+          Set-Content version.py $content
+          echo "version.py is now:"
+          Get-Content version.py
+
+      # ── 4. Set up Python ─────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ── 5. Cache pip ──────────────────────────────────────────────────────
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # ── 6. Install dependencies ───────────────────────────────────────────
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller PySide6 pygame pymunk numpy
+
+      # ── 7. Build the exe ─────────────────────────────────────────────────
+      - name: Build with PyInstaller
+        run: pyinstaller aspis_onefile.spec --noconfirm
+
+      # ── 8. Zip ───────────────────────────────────────────────────────────
+      - name: Package artifact
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.ver.outputs.TAG }}"
+          Compress-Archive -Path dist\AspisEngine.exe `
+                           -DestinationPath "AspisEngine-$tag-windows-x64.zip"
+          echo "Created: AspisEngine-$tag-windows-x64.zip"
+
+      # ── 9. Create GitHub Release ──────────────────────────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.TAG }}
+          name: "Aspis Engine ${{ steps.ver.outputs.TAG }}"
+          body: |
+            ## Aspis Engine ${{ steps.ver.outputs.TAG }}
+
+            Automated release built from commit [${{ github.sha }}](../../commit/${{ github.sha }}).
+
+            **Branch:** `${{ github.ref_name }}`
+            **Build:**  #${{ github.run_number }}
+
+            ### Download
+            **AspisEngine-${{ steps.ver.outputs.TAG }}-windows-x64.zip**
+            Windows 64-bit standalone — no Python installation required.
+
+            ### Changes in this release
+            See [commit history](../../commits/${{ github.ref_name }}) for details.
+          files: "AspisEngine-${{ steps.ver.outputs.TAG }}-windows-x64.zip"
+          draft: false
+          prerelease: false
+          make_latest: true

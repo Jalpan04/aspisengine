@@ -4,6 +4,10 @@ import os
 import json
 import shutil
 import subprocess
+try:
+    from version import __version__ as _ENGINE_VERSION
+except ImportError:
+    _ENGINE_VERSION = "1.0.0"
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                                QLineEdit, QPushButton, QFileDialog, QListWidget, 
                                QMessageBox, QWidget, QListWidgetItem, QInputDialog,
@@ -157,7 +161,8 @@ class ProjectManager(QDialog):
         engine_lbl = QLabel("ENGINE")
         engine_lbl.setObjectName("LogoSub")
         
-        version_lbl = QLabel("v1.0.0 Beta")
+        _disp_ver = _ENGINE_VERSION if _ENGINE_VERSION.count(".") >= 2 else f"{_ENGINE_VERSION}.dev"
+        version_lbl = QLabel(f"v{_disp_ver}")
         version_lbl.setObjectName("VersionText")
         
         logo_container.addWidget(logo_lbl)

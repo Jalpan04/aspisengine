@@ -114,6 +114,21 @@ class Script:
         # API hook
         return None
 
+    def play_animation(self, state_name):
+        """Plays the specified animation state directly."""
+        # Monkey-patched by runtime
+        pass
+
+    def set_anim_parameter(self, param_name, value):
+        """Sets the value of an animator parameter."""
+        # Monkey-patched by runtime
+        pass
+
+    def get_anim_parameter(self, param_name):
+        """Gets the value of an animator parameter."""
+        # Monkey-patched by runtime
+        return None
+
 class KeyCode:
     """Mapping to Pygame keys."""
     W = pygame.K_w

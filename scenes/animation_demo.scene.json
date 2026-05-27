@@ -1,0 +1,136 @@
+{
+  "metadata": {
+    "name": "Animation Demo Scene",
+    "version": 1
+  },
+  "objects": [
+    {
+      "id": "camera-id-1234",
+      "name": "Main Camera",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "Camera": {
+          "width": 1280,
+          "height": 720,
+          "is_main": true
+        }
+      }
+    },
+    {
+      "id": "player-id-5678",
+      "name": "Animated Player",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            640.0,
+            360.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "layer": 1,
+          "visible": true,
+          "tint": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        "Animator": {
+          "sprite_sheet": "assets/character_spritesheet.png",
+          "frame_width": 256,
+          "frame_height": 256,
+          "current_state": "idle",
+          "animations": {
+            "idle": {
+              "name": "idle",
+              "frames": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "frame_rate": 8.0,
+              "loop": true
+            },
+            "run": {
+              "name": "run",
+              "frames": [
+                4,
+                5,
+                6,
+                7
+              ],
+              "frame_rate": 10.0,
+              "loop": true
+            }
+          },
+          "parameters": {
+            "speed": {
+              "type": "float",
+              "value": 0.0
+            }
+          },
+          "transitions": [
+            {
+              "from_state": "idle",
+              "to_state": "run",
+              "conditions": [
+                {
+                  "parameter": "speed",
+                  "operator": "greater",
+                  "value": 0.5
+                }
+              ]
+            },
+            {
+              "from_state": "run",
+              "to_state": "idle",
+              "conditions": [
+                {
+                  "parameter": "speed",
+                  "operator": "less",
+                  "value": 0.5
+                }
+              ]
+            }
+          ]
+        },
+        "Script": {
+          "script_path": "scripts/AnimatedPlayer.py"
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      30,
+      30,
+      35,
+      255
+    ]
+  }
+}

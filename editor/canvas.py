@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPixmap, QCursor, QPolygonF, QPainterPath
-from PySide6.QtCore import Qt, QRectF, QPointF
+from PySide6.QtCore import Qt, QRectF, QPointF, QTimer
 from editor.editor_state import EditorState
 from editor.undo_redo import ChangeComponentCommand
 import os
@@ -68,6 +68,15 @@ class SceneCanvas(QWidget):
         self.sprite_cache = {}
         self.handle_size = 10
 
+        # Background Animation Loop for Live Previews
+        self.anim_timer = QTimer(self)
+        self.anim_timer.setInterval(16) # ~60 FPS
+        self.anim_timer.timeout.connect(self.update_editor_animations)
+        self.anim_timer.start()
+        import time
+        self.last_anim_time = time.time()
+        self.editor_anim_states = {} # obj_id -> { "frame_idx": 0, "timer": 0.0 }
+
     def get_canvas_center(self):
         cx = (self.width() / 2 - self.pan_offset.x()) / self.zoom - (self.width() / 2 / self.zoom)
         cy = (self.height() / 2 - self.pan_offset.y()) / self.zoom - (self.height() / 2 / self.zoom)
@@ -89,19 +98,99 @@ class SceneCanvas(QWidget):
             return None
         if path in self.sprite_cache:
             return self.sprite_cache[path]
-        full_path = os.path.join(self.state.project_root, path)
+        
+        # Multi-stage path resolution strategy
+        full_path = ""
+        
+        # 1. Check if the path is already absolute
+        if os.path.isabs(path):
+            full_path = os.path.normpath(path)
+        else:
+            # 2. Try relative to project root
+            full_path = os.path.normpath(os.path.join(self.state.project_root, path))
+            
+            # 3. Fallback: try relative to the scene file's parent directory
+            if not os.path.exists(full_path) and self.state.current_scene_path:
+                scene_dir = os.path.dirname(self.state.current_scene_path)
+                # Try relative to the directory containing the scene folder (assuming assets is sibling to scenes)
+                full_path = os.path.normpath(os.path.join(scene_dir, "..", path))
+                if not os.path.exists(full_path):
+                    # Try directly relative to the scene folder
+                    full_path = os.path.normpath(os.path.join(scene_dir, path))
+            
+            # 4. Fallback: try relative to current working directory
+            if not os.path.exists(full_path):
+                full_path = os.path.normpath(os.path.abspath(path))
+            
         if os.path.exists(full_path):
             pixmap = QPixmap(full_path)
             if pixmap.isNull():
                 print(f"Failed to load pixmap: {full_path}")
             else:
-                pass 
-                # print(f"Loaded pixmap: {full_path} ({pixmap.width()}x{pixmap.height()})")
+                pass
             self.sprite_cache[path] = pixmap
             return pixmap
         else:
-            print(f"Sprite file not found: {full_path}")
+            print(f"Sprite file not found: {path} (Checked: {full_path})")
         return None
+
+    def update_editor_animations(self):
+        import time
+        now = time.time()
+        dt = now - self.last_anim_time
+        self.last_anim_time = now
+        
+        scene = self.state.current_scene
+        if not scene:
+            return
+            
+        any_animated = False
+        for obj in scene.objects:
+            if not obj.get("active", True):
+                continue
+            animator_data = obj.get("components", {}).get("Animator")
+            if animator_data:
+                if not animator_data.get("playing", True):
+                    continue
+                current_state = animator_data.get("current_state", "")
+                if not current_state:
+                    continue
+                    
+                animations = animator_data.get("animations", {})
+                anim_info = animations.get(current_state, {})
+                frames = anim_info.get("frames", [])
+                if not frames:
+                    continue
+                    
+                fps = anim_info.get("frame_rate", 10.0)
+                loop = anim_info.get("loop", True)
+                
+                obj_id = obj.get("id")
+                initial_frame = animator_data.get("frame_idx", 0)
+                if obj_id not in self.editor_anim_states:
+                    self.editor_anim_states[obj_id] = {"frame_idx": initial_frame, "timer": 0.0}
+                    
+                state = self.editor_anim_states[obj_id]
+                # Sync manual changes from inspector
+                if "frame_idx" in animator_data:
+                    state["frame_idx"] = animator_data["frame_idx"]
+                
+                state["timer"] += dt
+                
+                frame_duration = 1.0 / fps if fps > 0 else 0.1
+                if state["timer"] >= frame_duration:
+                    state["timer"] %= frame_duration
+                    state["frame_idx"] += 1
+                    if state["frame_idx"] >= len(frames):
+                        if loop:
+                            state["frame_idx"] = 0
+                        else:
+                            state["frame_idx"] = len(frames) - 1
+                    animator_data["frame_idx"] = state["frame_idx"]
+                    any_animated = True
+                    
+        if any_animated:
+            self.update()
 
     def get_obj_geometry(self, obj):
         transform = obj.get("components", {}).get("Transform", {})
@@ -309,14 +398,20 @@ class SceneCanvas(QWidget):
             if pixmap and not pixmap.isNull():
                 target_rect = QRectF(-w/2, -h/2, w, h)
                 
-                # Determine current frame index
+                # Determine current frame index using the background animation loop
                 current_state = animator_data.get("current_state", "")
                 frames = []
                 if current_state and "animations" in animator_data:
                     anim_info = animator_data["animations"].get(current_state, {})
                     frames = anim_info.get("frames", [])
                 
-                frame_val = frames[0] if frames else 0
+                obj_id = obj.get("id")
+                frame_idx = animator_data.get("frame_idx", 0)
+                if obj_id in self.editor_anim_states:
+                    frame_idx = self.editor_anim_states[obj_id].get("frame_idx", frame_idx)
+                if frame_idx >= len(frames):
+                    frame_idx = 0
+                frame_val = frames[frame_idx] if frames else 0
                 
                 cols = pixmap.width() // frame_width if frame_width > 0 else 1
                 cols = max(1, cols)
@@ -828,6 +923,23 @@ class SceneCanvas(QWidget):
             if hit_obj:
                 self.state.select_object(hit_obj.get("id"))
                 self.update()
+                
+                # If we are in Translate tool, allow immediate direct body dragging
+                if self.tool_mode == ToolMode.TRANSLATE:
+                    self.grabMouse()
+                    self.viewport_state = ViewportState.MANIPULATING
+                    self.active_handle = self.HANDLE_MOVE_ALL
+                    self.drag_start = QPointF(wx, wy)
+                    self.drag_screen_start = pos
+                    
+                    transform = hit_obj.get("components", {}).get("Transform", {})
+                    self.drag_obj_start_pos = list(transform.get("position", [0, 0]))
+                    self.drag_rot_start = transform.get("rotation", 0)
+                    self.drag_scale_start = list(transform.get("scale", [1, 1]))
+                    
+                    self.active_command = ChangeComponentCommand(hit_obj, "Transform", "position", self.drag_obj_start_pos)
+                    self.setCursor(Qt.SizeAllCursor)
+                return
             else:
                 # Priority 4: Empty Space -> Clear selection and start panning
                 self.state.select_object(None)
