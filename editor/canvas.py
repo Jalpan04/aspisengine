@@ -110,34 +110,39 @@ class SceneCanvas(QWidget):
         scale = transform.get("scale", [1, 1])
         rotation = transform.get("rotation", 0)
         
-        sprite_path = sprite_data.get("sprite_path", "")
-        pixmap = self.load_sprite(sprite_path) if sprite_path else None
-        
-        if pixmap and not pixmap.isNull():
-            w = pixmap.width() * scale[0]
-            h = pixmap.height() * scale[1]
+        animator_data = obj.get("components", {}).get("Animator")
+        if animator_data:
+            w = animator_data.get("frame_width", 32) * scale[0]
+            h = animator_data.get("frame_height", 32) * scale[1]
         else:
-            # Fallback to BoxCollider if available
-            box = obj.get("components", {}).get("BoxCollider")
-            if box:
-                 bs = box.get("size", [50, 50])
-                 w = bs[0] * scale[0]
-                 h = bs[1] * scale[1]
+            sprite_path = sprite_data.get("sprite_path", "")
+            pixmap = self.load_sprite(sprite_path) if sprite_path else None
+            
+            if pixmap and not pixmap.isNull():
+                w = pixmap.width() * scale[0]
+                h = pixmap.height() * scale[1]
             else:
-                 # Check for Camera component
-                 cam = obj.get("components", {}).get("Camera")
-                 if cam:
-                     cw = cam.get("width", 800.0)
-                     ch = cam.get("height", 600.0)
-                     cz = cam.get("zoom", 1.0)
-                     if cz <= 0.001: cz = 1.0
-                     # Camera viewport size in world space
-                     w = (cw / cz) # We ignore object scale for camera viewport as runtime does
-                     h = (ch / cz)
-                 else:
-                     # Standard Fallback
-                     w = 40 * scale[0]
-                     h = 40 * scale[1]
+                # Fallback to BoxCollider if available
+                box = obj.get("components", {}).get("BoxCollider")
+                if box:
+                     bs = box.get("size", [50, 50])
+                     w = bs[0] * scale[0]
+                     h = bs[1] * scale[1]
+                else:
+                     # Check for Camera component
+                     cam = obj.get("components", {}).get("Camera")
+                     if cam:
+                         cw = cam.get("width", 800.0)
+                         ch = cam.get("height", 600.0)
+                         cz = cam.get("zoom", 1.0)
+                         if cz <= 0.001: cz = 1.0
+                         # Camera viewport size in world space
+                         w = (cw / cz) # We ignore object scale for camera viewport as runtime does
+                         h = (ch / cz)
+                     else:
+                         # Standard Fallback
+                         w = 40 * scale[0]
+                         h = 40 * scale[1]
         
         return pos[0], pos[1], w, h, rotation
 
@@ -286,6 +291,70 @@ class SceneCanvas(QWidget):
         
         is_selected = (obj.get("id") == self.state.selected_object_id)
         
+        animator_data = obj.get("components", {}).get("Animator")
+        if animator_data:
+            sprite_path = animator_data.get("sprite_sheet", "")
+            pixmap = self.load_sprite(sprite_path) if sprite_path else None
+            
+            frame_width = animator_data.get("frame_width", 32)
+            frame_height = animator_data.get("frame_height", 32)
+            
+            w = frame_width * scale[0]
+            h = frame_height * scale[1]
+            
+            painter.save()
+            painter.translate(pos[0], pos[1])
+            painter.rotate(rotation)
+            
+            if pixmap and not pixmap.isNull():
+                target_rect = QRectF(-w/2, -h/2, w, h)
+                
+                # Determine current frame index
+                current_state = animator_data.get("current_state", "")
+                frames = []
+                if current_state and "animations" in animator_data:
+                    anim_info = animator_data["animations"].get(current_state, {})
+                    frames = anim_info.get("frames", [])
+                
+                frame_val = frames[0] if frames else 0
+                
+                cols = pixmap.width() // frame_width if frame_width > 0 else 1
+                cols = max(1, cols)
+                row = frame_val // cols
+                col = frame_val % cols
+                
+                source_rect = QRectF(col * frame_width, row * frame_height, frame_width, frame_height)
+                painter.drawPixmap(target_rect, pixmap, source_rect)
+            else:
+                # Draw Animator placeholder box
+                tint = sprite_data.get("tint", [255, 255, 255, 255])
+                if len(tint) == 3: tint.append(255)
+                color = QColor(*tint)
+                painter.setBrush(QBrush(color))
+                
+                if is_selected:
+                    pen = QPen(QColor(100, 180, 255), 2/self.zoom)
+                else:
+                    pen = QPen(QColor(50, 50, 50, 150), 1/self.zoom)
+                painter.setPen(pen)
+                painter.drawRect(QRectF(-w/2, -h/2, w, h))
+                
+                # Render state name inside the placeholder
+                state_text = f"Anim: {animator_data.get('current_state', 'none')}"
+                painter.setPen(QColor(255, 255, 255, 200))
+                font = QFont("Arial", 8)
+                painter.setFont(font)
+                painter.drawText(QRectF(-w/2, -h/2, w, h), Qt.AlignCenter, state_text)
+                
+            # Outline if selected
+            if is_selected:
+                painter.setPen(QPen(QColor(100, 180, 255), 1/self.zoom, Qt.DashLine))
+                painter.setBrush(Qt.NoBrush)
+                painter.drawRect(QRectF(-w/2 - 2/self.zoom, -h/2 - 2/self.zoom, w + 4/self.zoom, h + 4/self.zoom))
+            
+            painter.restore()
+            return
+            
         sprite_path = sprite_data.get("sprite_path", "")
         pixmap = self.load_sprite(sprite_path) if sprite_path else None
         

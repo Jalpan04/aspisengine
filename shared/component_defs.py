@@ -82,6 +82,16 @@ class Camera:
     height: float = 600.0
     is_main: bool = True
 
+@dataclass
+class Animator:
+    sprite_sheet: str = ""
+    frame_width: int = 32
+    frame_height: int = 32
+    current_state: str = ""
+    animations: Dict[str, Any] = field(default_factory=dict)
+    parameters: Dict[str, Any] = field(default_factory=dict)
+    transitions: List[Dict[str, Any]] = field(default_factory=list)
+
 # Map component names to classes for easy lookup
 COMPONENT_MAP = {
     COMPONENT_TRANSFORM: Transform,
@@ -94,4 +104,5 @@ COMPONENT_MAP = {
     "Camera": Camera,
     "Background": Background,
     "TextRenderer": TextRenderer,
+    "Animator": Animator,
 }

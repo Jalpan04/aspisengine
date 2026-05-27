@@ -3,21 +3,6 @@
     "name": "Dynamic Lighting Demo",
     "version": 1
   },
-  "settings": {
-    "background_color": [
-      10,
-      10,
-      15,
-      255
-    ],
-    "ambient_light": [
-      20,
-      20,
-      30,
-      255
-    ]
-  },
-  "prefabs": {},
   "objects": [
     {
       "id": "cam",
@@ -853,5 +838,14 @@
         }
       }
     }
-  ]
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
 }

@@ -3,21 +3,6 @@
     "name": "Circle vs Box Shadows",
     "version": 1
   },
-  "settings": {
-    "background_color": [
-      10,
-      10,
-      10,
-      255
-    ],
-    "ambient_light": [
-      15,
-      15,
-      15,
-      255
-    ]
-  },
-  "prefabs": {},
   "objects": [
     {
       "id": "cam",
@@ -149,5 +134,14 @@
         }
       }
     }
-  ]
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
 }
