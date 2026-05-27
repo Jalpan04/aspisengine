@@ -10,6 +10,8 @@ env/
 venv/
 *.jpg
 *.png
+# Allow engine assets (sprites) to be committed
+!assets/**
 *.scene.json.backup
 *.prefab.backup
 
