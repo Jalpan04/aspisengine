@@ -38,29 +38,55 @@ jobs:
           Write-Output "TAG=$tag"    | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Build version: $full  (tag: $tag)"
 
-      # ── 3. Bake the full version into version.py before building ─────────
-      - name: Bake version into version.py
+      # ── 3. Bake the full version and update index.html ───────────────────
+      - name: Update version and index.html
         shell: pwsh
         run: |
           $full    = "${{ steps.ver.outputs.FULL }}"
+          $tag     = "${{ steps.ver.outputs.TAG }}"
+          
+          # Bake into version.py
           $content = Get-Content version.py -Raw
-          # Replace the version string value in-place
           $content = [regex]::Replace(
             $content,
             '(__version__\s*=\s*[''"])([^''"]+)([''"])',
             "`${1}$full`${3}"
           )
           Set-Content -Path version.py -Value $content -NoNewline
-          Write-Host "version.py is now:"
-          Get-Content version.py
+          Write-Host "version.py updated."
 
-      # ── 4. Set up Python ─────────────────────────────────────────────────
+          # Update index.html
+          $html    = Get-Content index.html -Raw
+          $newHref = "https://github.com/Jalpan04/aspisengine/releases/download/$tag/AspisEngine-$tag-windows-x64.zip"
+          $html    = [regex]::Replace($html, 'href="https://github.com/Jalpan04/aspisengine/releases/download/[^"]+"', "href=""$newHref""")
+          $html    = [regex]::Replace($html, '(<small>)v[0-9.]+( • Windows)', "`${1}$tag`${2}")
+          Set-Content -Path index.html -Value $html -NoNewline
+          Write-Host "index.html updated."
+
+      # ── 4. Commit and push bumped version and website changes ──────────
+      - name: Commit and push changes
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.ver.outputs.TAG }}"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add version.py index.html
+          $status = git status --porcelain
+          if ($status) {
+            git commit -m "chore: bump version to $tag and update index.html [skip ci]"
+            git push origin HEAD:main
+            Write-Host "Committed and pushed version bump and website update."
+          } else {
+            Write-Host "No changes to commit."
+          }
+
+      # ── 5. Set up Python ─────────────────────────────────────────────────
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # ── 5. Cache pip ──────────────────────────────────────────────────────
+      # ── 6. Cache pip ──────────────────────────────────────────────────────
       - name: Cache pip
         uses: actions/cache@v4
         with:
@@ -69,19 +95,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # ── 6. Install dependencies ───────────────────────────────────────────
+      # ── 7. Install dependencies ───────────────────────────────────────────
       - name: Install dependencies
         shell: pwsh
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller PySide6 pygame pymunk numpy
 
-      # ── 7. Build the exe ─────────────────────────────────────────────────
+      # ── 8. Build the exe ─────────────────────────────────────────────────
       - name: Build with PyInstaller
         shell: pwsh
         run: pyinstaller aspis_onefile.spec --noconfirm
 
-      # ── 8. Zip ───────────────────────────────────────────────────────────
+      # ── 9. Zip ───────────────────────────────────────────────────────────
       - name: Package artifact
         shell: pwsh
         run: |
@@ -90,7 +116,7 @@ jobs:
                            -DestinationPath "AspisEngine-$tag-windows-x64.zip"
           Write-Host "Created: AspisEngine-$tag-windows-x64.zip"
 
-      # ── 9. Create GitHub Release ──────────────────────────────────────────
+      # ── 10. Create GitHub Release ──────────────────────────────────────────
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
