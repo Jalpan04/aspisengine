@@ -5,16 +5,31 @@ from editor.editor_state import EditorState
 from editor.undo_redo import ChangeComponentCommand
 import os
 import math
+import copy
+from enum import Enum
+
+class ViewportState(Enum):
+    IDLE = 0
+    NAVIGATING = 1
+    SELECTING = 2
+    MANIPULATING = 3
+
+class ToolMode(Enum):
+    SELECT = 0
+    TRANSLATE = 1
+    ROTATE = 2
+    SCALE = 3
 
 class SceneCanvas(QWidget):
     # Handle types
     HANDLE_NONE = 0
-    HANDLE_MOVE = 1
-    HANDLE_SCALE_TL = 2
-    HANDLE_SCALE_TR = 3
-    HANDLE_SCALE_BL = 4
-    HANDLE_SCALE_BR = 5
-    HANDLE_ROTATE = 6
+    HANDLE_MOVE_ALL = 1
+    HANDLE_MOVE_X = 2
+    HANDLE_MOVE_Y = 3
+    HANDLE_ROTATE = 4
+    HANDLE_SCALE_UNIFORM = 5
+    HANDLE_SCALE_X = 6
+    HANDLE_SCALE_Y = 7
 
     def __init__(self):
         super().__init__()
@@ -36,14 +51,19 @@ class SceneCanvas(QWidget):
         self.pan_offset = QPointF(0, 0)
         
         # Interaction
-        self.panning = False
+        self.viewport_state = ViewportState.IDLE
+        self.tool_mode = ToolMode.TRANSLATE
+        self.local_space = True
+        self.hovered_handle = self.HANDLE_NONE
         self.active_handle = self.HANDLE_NONE
         self.drag_start = QPointF()
-        self.drag_obj_start_pos = [0, 0] # Store as list to be mutable if needed
+        self.drag_screen_start = QPointF()
+        self.drag_obj_start_pos = [0, 0]
         self.drag_rot_start = 0
         self.drag_scale_start = [1, 1]
         self.drag_zoom_start = 1.0
-        self.drag_obj_start_bounds = (0, 0) # w, h at start
+        self.drag_obj_start_bounds = (0, 0)
+        self.active_command = None
         
         self.sprite_cache = {}
         self.handle_size = 10
@@ -143,10 +163,12 @@ class SceneCanvas(QWidget):
             # Sort by layer: Background (-100), Sprite (0), Text (100)
             def get_layer(o):
                 bg = o.get("components", {}).get("Background")
-                if bg: return bg.get("layer", -100)
+                if bg: return bg.get("layer", 1) - 1000
                 sr = o.get("components", {}).get("SpriteRenderer")
-                if sr: return sr.get("layer", 0)
-                return 0
+                if sr: return sr.get("layer", 1)
+                tr = o.get("components", {}).get("TextRenderer")
+                if tr: return tr.get("layer", 1)
+                return 1
             
             sorted_objs = sorted(scene.objects, key=get_layer)
             
@@ -292,95 +314,96 @@ class SceneCanvas(QWidget):
             painter.drawPixmap(target_rect, pixmap, QRectF(pixmap.rect()))
         else:
             # Fallback Shapes (Square/Circle)
-            
-            # Get Tint Color
-            tint = sprite_data.get("tint", [255, 255, 255, 255])
-            if len(tint) == 3: tint.append(255)
-            color = QColor(*tint)
-            
-            brush = QBrush(color)
-            
-            # Selection Style (Overlay)
-            if is_selected:
-                pen = QPen(QColor(100, 180, 255), 2/self.zoom)
-            else:
-                pen = QPen(QColor(50, 50, 50, 150), 1/self.zoom)
-            
-            painter.setBrush(brush)
-            painter.setPen(pen)
-            
-            # Draw Circle if CircleCollider exists
-            if "CircleCollider" in obj.get("components", {}):
-                # Assume diameter matches width/height derived from scale (usually 50 base)
-                painter.drawEllipse(QRectF(-w/2, -h/2, w, h))
-            elif "Camera" in obj.get("components", {}):
-                # Special Camera Icon
-                icon_size = 40 
-                iw = icon_size * scale[0]
-                ih = icon_size * scale[1]
+            if "LightSource" not in obj.get("components", {}):
+                # Get Tint Color
+                tint = sprite_data.get("tint", [255, 255, 255, 255])
+                if len(tint) == 3: tint.append(255)
+                color = QColor(*tint)
                 
-                # Styling: Professional Icon
-                # Fill: Faint Yellow-White
-                painter.setBrush(QColor(255, 240, 150, 40)) 
-                # Stroke: Subtle Outline
-                painter.setPen(QPen(QColor(255, 240, 150, 150), 1.5/self.zoom))
+                brush = QBrush(color)
                 
-                # 1. Body (Rounded Rect)
-                body_w = iw * 0.7
-                body_h = ih * 0.6
-                path = QPainterPath()
-                path.addRoundedRect(QRectF(-iw/2, -body_h/2, body_w, body_h), 2, 2)
-                
-                # 2. Lens (Triangle on right)
-                lens_size = body_h * 0.7
-                # Triangle pointing right
-                path.moveTo(iw/2 - lens_size, -lens_size/2)
-                path.lineTo(iw/2, -lens_size)
-                path.lineTo(iw/2, lens_size)
-                path.lineTo(iw/2 - lens_size, lens_size/2)
-                
-                painter.drawPath(path)
-                
-            elif "TextRenderer" in obj.get("components", {}):
-                # Text Rendering
-                text_data = obj["components"]["TextRenderer"]
-                text_content = text_data.get("text", "Text")
-                font_size = int(text_data.get("font_size", 24))
-                color_list = text_data.get("color", [255, 255, 255])
-                if len(color_list) == 3: color_list.append(255)
-                
-                # Undo Scale so text size is in Screen/World units (not affected by object scale)
-                # Note: Painter is already scaled by self.zoom, which we WANT (to zoom in on text).
-                # But we DON'T want object scale affecting text distortion.
-                painter.save()
-                if scale[0] != 0 and scale[1] != 0:
-                    painter.scale(1/scale[0], 1/scale[1])
-                
-                painter.setPen(QColor(*color_list))
-                font = QFont("Arial")
-                font.setPixelSize(font_size)
-                painter.setFont(font)
-                
-                # Draw Center
-                # Bounding box large enough
-                painter.drawText(QRectF(-1000, -1000, 2000, 2000), Qt.AlignCenter, text_content)
-                
-                painter.restore()
-                
-            else:
-                # Default Square
-                painter.drawRect(QRectF(-w/2, -h/2, w, h))
-            
-            # Name Tag
-            # Name Tag (Skip if TextRenderer is present to avoid clutter)
-            if "TextRenderer" not in obj.get("components", {}):
+                # Selection Style (Overlay)
                 if is_selected:
-                    painter.setPen(QPen(Qt.white))
+                    pen = QPen(QColor(100, 180, 255), 2/self.zoom)
                 else:
-                    painter.setPen(QPen(Qt.lightGray))
+                    pen = QPen(QColor(50, 50, 50, 150), 1/self.zoom)
+                
+                painter.setBrush(brush)
+                painter.setPen(pen)
+                
+                # Draw Circle if CircleCollider exists
+                if "CircleCollider" in obj.get("components", {}):
+                    # Assume diameter matches width/height derived from scale (usually 50 base)
+                    painter.drawEllipse(QRectF(-w/2, -h/2, w, h))
+                elif "Camera" in obj.get("components", {}):
+                    # Special Camera Icon
+                    icon_size = 40 
+                    iw = icon_size * scale[0]
+                    ih = icon_size * scale[1]
                     
-                painter.setFont(QFont("Segoe UI", 10))
-                painter.drawText(QRectF(-w/2, -h/2, w, h), Qt.AlignCenter, obj.get("name", "?")[:10])
+                    # Styling: Professional Icon
+                    # Fill: Faint Yellow-White
+                    # Stroke: Subtle Outline
+                    alpha_mult = 1.0 if is_selected else 0.15
+                    painter.setBrush(QColor(255, 240, 150, int(40 * alpha_mult))) 
+                    painter.setPen(QPen(QColor(255, 240, 150, int(150 * alpha_mult)), 1.5/self.zoom))
+                    
+                    # 1. Body (Rounded Rect)
+                    body_w = iw * 0.7
+                    body_h = ih * 0.6
+                    path = QPainterPath()
+                    path.addRoundedRect(QRectF(-iw/2, -body_h/2, body_w, body_h), 2, 2)
+                    
+                    # 2. Lens (Triangle on right)
+                    lens_size = body_h * 0.7
+                    # Triangle pointing right
+                    path.moveTo(iw/2 - lens_size, -lens_size/2)
+                    path.lineTo(iw/2, -lens_size)
+                    path.lineTo(iw/2, lens_size)
+                    path.lineTo(iw/2 - lens_size, lens_size/2)
+                    
+                    painter.drawPath(path)
+                    
+                elif "TextRenderer" in obj.get("components", {}):
+                    # Text Rendering
+                    text_data = obj["components"]["TextRenderer"]
+                    text_content = text_data.get("text", "Text")
+                    font_size = int(text_data.get("font_size", 24))
+                    color_list = text_data.get("color", [255, 255, 255])
+                    if len(color_list) == 3: color_list.append(255)
+                    
+                    # Undo Scale so text size is in Screen/World units (not affected by object scale)
+                    # Note: Painter is already scaled by self.zoom, which we WANT (to zoom in on text).
+                    # But we DON'T want object scale affecting text distortion.
+                    painter.save()
+                    if scale[0] != 0 and scale[1] != 0:
+                        painter.scale(1/scale[0], 1/scale[1])
+                    
+                    painter.setPen(QColor(*color_list))
+                    font = QFont("Arial")
+                    font.setPixelSize(font_size)
+                    painter.setFont(font)
+                    
+                    # Draw Center
+                    # Bounding box large enough
+                    painter.drawText(QRectF(-1000, -1000, 2000, 2000), Qt.AlignCenter, text_content)
+                    
+                    painter.restore()
+                    
+                else:
+                    # Default Square
+                    painter.drawRect(QRectF(-w/2, -h/2, w, h))
+                
+                # Name Tag
+                # Name Tag (Skip if TextRenderer is present to avoid clutter)
+                if "TextRenderer" not in obj.get("components", {}):
+                    if is_selected:
+                        painter.setPen(QPen(Qt.white))
+                    else:
+                        painter.setPen(QPen(Qt.lightGray))
+                        
+                    painter.setFont(QFont("Segoe UI", 10))
+                    painter.drawText(QRectF(-w/2, -h/2, w, h), Qt.AlignCenter, obj.get("name", "?")[:10])
 
         # Draw Camera Gizmo
         camera_data = obj.get("components", {}).get("Camera")
@@ -396,7 +419,8 @@ class SceneCanvas(QWidget):
             world_w = cw / zoom
             world_h = ch / zoom
             
-            painter.setPen(QColor(255, 255, 0)) # Yellow
+            alpha_mult = 1.0 if is_selected else 0.15
+            painter.setPen(QPen(QColor(255, 255, 0, int(255 * alpha_mult)), 1.0 / self.zoom)) # Yellow with alpha
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(QRectF(-world_w/2, -world_h/2, world_w, world_h))
             
@@ -404,11 +428,55 @@ class SceneCanvas(QWidget):
             scale_factor = 1.0 / self.zoom if self.zoom else 1.0
             painter.save()
             painter.scale(scale_factor, scale_factor)
-            painter.setPen(QColor(255, 255, 0))
+            painter.setPen(QPen(QColor(255, 255, 0, int(255 * alpha_mult))))
             # Adjust label position to top-left of the scaled box
             label_x = -world_w/2 / scale_factor
             label_y = (-world_h/2 / scale_factor) - 20
             painter.drawText(QRectF(label_x, label_y, 100, 20), Qt.AlignLeft, f"Camera ({int(cw)}x{int(ch)})")
+            painter.restore()
+
+        # Draw LightSource Gizmo
+        light_data = obj.get("components", {}).get("LightSource")
+        if light_data:
+            color_list = light_data.get("color", [255, 255, 255, 255])
+            if len(color_list) < 4:
+                color_list = list(color_list) + [255]
+            radius = light_data.get("radius", 200.0)
+            intensity = light_data.get("intensity", 1.0)
+            
+            painter.save()
+            
+            # Draw center glow dot
+            glow_color = QColor(*color_list)
+            glow_color.setAlphaF(0.4 * min(1.0, intensity))
+            painter.setBrush(glow_color)
+            painter.setPen(QPen(QColor(255, 230, 100), 1.0 / self.zoom))
+            painter.drawEllipse(QPointF(0, 0), 8, 8)
+            
+            # Draw small ray lines to make it look like a light bulb icon
+            painter.setPen(QPen(QColor(255, 230, 100), 1.5 / self.zoom))
+            for angle in range(0, 360, 45):
+                rad = math.radians(angle)
+                painter.drawLine(QPointF(10 * math.cos(rad), 10 * math.sin(rad)),
+                                 QPointF(15 * math.cos(rad), 15 * math.sin(rad)))
+            
+            # Draw Radius Circle if selected
+            if is_selected:
+                radius_pen = QPen(QColor(255, 255, 100), 1.0 / self.zoom)
+                radius_pen.setStyle(Qt.DashLine)
+                painter.setPen(radius_pen)
+                painter.setBrush(QColor(255, 255, 100, 20)) # Very faint yellow fill
+                painter.drawEllipse(QPointF(0, 0), radius, radius)
+                
+                # Label
+                scale_factor = 1.0 / self.zoom if self.zoom else 1.0
+                painter.save()
+                painter.scale(scale_factor, scale_factor)
+                painter.setPen(QColor(255, 255, 100))
+                label_y = (-radius / scale_factor) - 15
+                painter.drawText(QRectF(0, label_y, 150, 15), Qt.AlignLeft, f"Light (Radius: {int(radius)})")
+                painter.restore()
+                
             painter.restore()
 
         # Draw Selection Handles (in rotated local space)
@@ -461,34 +529,107 @@ class SceneCanvas(QWidget):
 
     def draw_handles_local(self, painter, w, h):
         hs = self.handle_size / self.zoom
+        length = 60 / self.zoom
         
-        # Selection Outline
-        pen = QPen(QColor(100, 180, 255))
-        pen.setWidthF(2 / self.zoom)
+        # 1. Selection Outline Bounding Box (Subtle light blue dashed line)
+        pen = QPen(QColor(80, 150, 255, 180))
+        pen.setWidthF(1.5 / self.zoom)
+        pen.setStyle(Qt.DashLine)
         painter.setPen(pen)
         painter.setBrush(Qt.NoBrush)
         painter.drawRect(QRectF(-w/2, -h/2, w, h))
         
-        # Handles
-        painter.setBrush(QBrush(QColor(100, 180, 255)))
-        
-        # Corners relative to center (0,0)
-        corners = [
-            (-w/2, -h/2), (w/2, -h/2), (-w/2, h/2), (w/2, h/2)
-        ]
-        
-        for cx, cy in corners:
-            painter.drawRect(QRectF(cx - hs/2, cy - hs/2, hs, hs))
-        
-        # Center handle (Move)
-        painter.setBrush(QBrush(QColor(255, 200, 100)))
-        painter.drawRect(QRectF(-hs/2, -hs/2, hs, hs))
-        
-        # Rotation Handle (Top)
-        painter.setBrush(QBrush(QColor(100, 255, 100)))
-        rot_y = -h/2 - 25 / self.zoom
-        painter.drawEllipse(QPointF(0, rot_y), hs/2, hs/2)
-        painter.drawLine(QPointF(0, -h/2), QPointF(0, rot_y))
+        # Helper to get handle color with hover highlight
+        def get_color(handle_type, default_color):
+            if self.viewport_state == ViewportState.MANIPULATING:
+                if self.active_handle == handle_type:
+                    return QColor(240, 200, 80) # Active Gold
+            elif self.hovered_handle == handle_type:
+                return QColor(240, 200, 80) # Hover Gold
+            return default_color
+
+        # Draw handles depending on Tool Mode
+        if self.tool_mode == ToolMode.SELECT:
+            # No interactive handles, just outline
+            return
+            
+        elif self.tool_mode == ToolMode.TRANSLATE:
+            # Draw Translate Gizmo
+            # Center free-move block (Gold)
+            center_color = get_color(self.HANDLE_MOVE_ALL, QColor(240, 200, 80, 200))
+            painter.setPen(QPen(QColor(20, 20, 20), 1 / self.zoom))
+            painter.setBrush(QBrush(center_color))
+            painter.drawRect(QRectF(-hs/2, -hs/2, hs, hs))
+            
+            # X-Axis Line and Arrow (Red)
+            x_color = get_color(self.HANDLE_MOVE_X, QColor(230, 80, 80))
+            painter.setPen(QPen(x_color, 2 / self.zoom))
+            painter.drawLine(QPointF(0, 0), QPointF(length, 0))
+            
+            # X Arrow Head
+            arrow_w = 6 / self.zoom
+            arrow_h = 10 / self.zoom
+            arrow_x = QPolygonF([
+                QPointF(length, 0),
+                QPointF(length - arrow_h, -arrow_w),
+                QPointF(length - arrow_h, arrow_w)
+            ])
+            painter.setBrush(QBrush(x_color))
+            painter.setPen(Qt.NoPen)
+            painter.drawPolygon(arrow_x)
+            
+            # Y-Axis Line and Arrow (Green)
+            y_color = get_color(self.HANDLE_MOVE_Y, QColor(80, 230, 80))
+            painter.setPen(QPen(y_color, 2 / self.zoom))
+            painter.drawLine(QPointF(0, 0), QPointF(0, -length))
+            
+            # Y Arrow Head
+            arrow_y = QPolygonF([
+                QPointF(0, -length),
+                QPointF(-arrow_w, -length + arrow_h),
+                QPointF(arrow_w, -length + arrow_h)
+            ])
+            painter.setBrush(QBrush(y_color))
+            painter.setPen(Qt.NoPen)
+            painter.drawPolygon(arrow_y)
+
+        elif self.tool_mode == ToolMode.ROTATE:
+            # Draw Rotate Gizmo (Circular Ring)
+            ring_color = get_color(self.HANDLE_ROTATE, QColor(80, 230, 80))
+            
+            pen = QPen(ring_color, 2 / self.zoom)
+            pen.setStyle(Qt.DashLine if self.hovered_handle != self.HANDLE_ROTATE and self.active_handle != self.HANDLE_ROTATE else Qt.SolidLine)
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawEllipse(QPointF(0, 0), length, length)
+            
+            # Small green circle at top to represent the grab anchor
+            painter.setPen(QPen(QColor(20, 20, 20), 1 / self.zoom))
+            painter.setBrush(QBrush(ring_color))
+            painter.drawEllipse(QPointF(0, -length), hs/2, hs/2)
+            
+        elif self.tool_mode == ToolMode.SCALE:
+            # Center uniform scale box (Blue)
+            center_color = get_color(self.HANDLE_SCALE_UNIFORM, QColor(80, 150, 255))
+            painter.setPen(QPen(QColor(20, 20, 20), 1 / self.zoom))
+            painter.setBrush(QBrush(center_color))
+            painter.drawRect(QRectF(-hs/2, -hs/2, hs, hs))
+            
+            # X-Axis Line and Box (Red)
+            x_color = get_color(self.HANDLE_SCALE_X, QColor(230, 80, 80))
+            painter.setPen(QPen(x_color, 2 / self.zoom))
+            painter.drawLine(QPointF(0, 0), QPointF(length, 0))
+            painter.setBrush(QBrush(x_color))
+            painter.setPen(QPen(QColor(20, 20, 20), 1 / self.zoom))
+            painter.drawRect(QRectF(length - hs/2, -hs/2, hs, hs))
+            
+            # Y-Axis Line and Box (Green)
+            y_color = get_color(self.HANDLE_SCALE_Y, QColor(80, 230, 80))
+            painter.setPen(QPen(y_color, 2 / self.zoom))
+            painter.drawLine(QPointF(0, 0), QPointF(0, -length))
+            painter.setBrush(QBrush(y_color))
+            painter.setPen(QPen(QColor(20, 20, 20), 1 / self.zoom))
+            painter.drawRect(QRectF(-hs/2, -length - hs/2, hs, hs))
 
     def rotate_point(self, x, y, cx, cy, angle_deg):
         """Rotate point (x,y) around (cx,cy) by angle."""
@@ -505,194 +646,298 @@ class SceneCanvas(QWidget):
         return rx + cx, ry + cy
 
     def hit_handle(self, wx, wy, obj):
+        if self.tool_mode == ToolMode.SELECT:
+            return self.HANDLE_NONE
+            
         cx, cy, w, h, rotation = self.get_obj_geometry(obj)
         hs = self.handle_size / self.zoom
+        length = 60 / self.zoom
+        tolerance = 8 / self.zoom
         
         # Transform mouse world pos into object local unrotated space
-        # Translate to 0,0 then Rotate by -rotation
         lx, ly = self.rotate_point(wx, wy, cx, cy, -rotation)
         lx -= cx
         ly -= cy
         
-        # Now check against unrotated AABB centered at 0,0
-        # Box is [-w/2, -h/2] to [w/2, h/2]
+        # Center Pivot/Uniform handle check (Move/Scale)
+        if abs(lx) < hs/2 and abs(ly) < hs/2:
+            if self.tool_mode == ToolMode.TRANSLATE:
+                return self.HANDLE_MOVE_ALL
+            elif self.tool_mode == ToolMode.SCALE:
+                return self.HANDLE_SCALE_UNIFORM
         
-        # Check rotation handle (Top)
-        rot_y = -h/2 - 25 / self.zoom
-        if abs(lx - 0) < hs and abs(ly - rot_y) < hs:
-            return self.HANDLE_ROTATE
-            
-        # Check corner handles
-        corners = [
-            (-w/2, -h/2, self.HANDLE_SCALE_TL),
-            (w/2, -h/2, self.HANDLE_SCALE_TR),
-            (-w/2, h/2, self.HANDLE_SCALE_BL),
-            (w/2, h/2, self.HANDLE_SCALE_BR)
-        ]
-        for hx, hy, h_type in corners:
-            if abs(lx - hx) < hs and abs(ly - hy) < hs:
-                return h_type
-        
-        # Check center (Move)
-        if abs(lx) < hs and abs(ly) < hs:
-            return self.HANDLE_MOVE
-            
-        # Check body (Move)
-        if -w/2 <= lx <= w/2 and -h/2 <= ly <= h/2:
-            return self.HANDLE_MOVE
-            
+        if self.tool_mode == ToolMode.TRANSLATE:
+            # X-Axis handle (Line segment from (0,0) to (length,0))
+            if 0 <= lx <= length + tolerance and abs(ly) < tolerance:
+                return self.HANDLE_MOVE_X
+            # Y-Axis handle (Line segment from (0,0) to (0,-length))
+            if -tolerance <= lx <= tolerance and -length - tolerance <= ly <= 0:
+                return self.HANDLE_MOVE_Y
+                
+        elif self.tool_mode == ToolMode.SCALE:
+            # X-Axis scale handle
+            if 0 <= lx <= length + tolerance and abs(ly) < tolerance:
+                return self.HANDLE_SCALE_X
+            # Y-Axis scale handle
+            if -tolerance <= lx <= tolerance and -length - tolerance <= ly <= 0:
+                return self.HANDLE_SCALE_Y
+                
+        elif self.tool_mode == ToolMode.ROTATE:
+            # Circular ring of radius 'length'
+            dist = math.sqrt(lx**2 + ly**2)
+            if abs(dist - length) < tolerance:
+                return self.HANDLE_ROTATE
+                
         return self.HANDLE_NONE
 
     def mousePressEvent(self, event):
         pos = event.position()
         wx, wy = self.screen_to_world(pos.x(), pos.y())
-        
+
         if event.button() == Qt.LeftButton:
-            # Check handles on selected object first
+            # Alt + Left Click to pan
+            if event.modifiers() & Qt.AltModifier:
+                self.grabMouse()
+                self.viewport_state = ViewportState.NAVIGATING
+                self.drag_start = pos
+                self.setCursor(Qt.ClosedHandCursor)
+                return
+
+            # Priority 1: UI (Reserved/No-op, but routed)
+            # Priority 2: Transform Gizmo of already selected object
             if self.state.selected_object_id:
                 obj = self.state.get_selected_object()
                 if obj:
                     handle = self.hit_handle(wx, wy, obj)
                     if handle != self.HANDLE_NONE:
+                        # Grab mouse and lock into Manipulation State
+                        self.grabMouse()
+                        self.viewport_state = ViewportState.MANIPULATING
                         self.active_handle = handle
                         self.drag_start = QPointF(wx, wy)
+                        self.drag_screen_start = pos
+                        
                         transform = obj.get("components", {}).get("Transform", {})
                         self.drag_obj_start_pos = list(transform.get("position", [0, 0]))
                         self.drag_rot_start = transform.get("rotation", 0)
                         self.drag_scale_start = list(transform.get("scale", [1, 1]))
                         
+                        # Cache camera zoom
                         cam = obj.get("components", {}).get("Camera")
-                        if cam:
-                            self.drag_zoom_start = cam.get("zoom", 1.0)
-                        else:
-                            self.drag_zoom_start = 1.0
+                        self.drag_zoom_start = cam.get("zoom", 1.0) if cam else 1.0
                         
-                        _, _, w, h, _ = self.get_obj_geometry(obj)
-                        self.drag_obj_start_bounds = (w, h)
+                        # Initialize Undo Command
+                        comp_name = "Transform"
+                        key = "position"
+                        start_val = self.drag_obj_start_pos
+                        
+                        if self.tool_mode == ToolMode.ROTATE:
+                            key = "rotation"
+                            start_val = self.drag_rot_start
+                        elif self.tool_mode == ToolMode.SCALE:
+                            if cam:
+                                comp_name = "Camera"
+                                key = "zoom"
+                                start_val = self.drag_zoom_start
+                            else:
+                                key = "scale"
+                                start_val = self.drag_scale_start
+                                
+                        self.active_command = ChangeComponentCommand(obj, comp_name, key, start_val)
+                        
+                        # Set custom cursor
+                        if self.tool_mode == ToolMode.TRANSLATE:
+                            self.setCursor(Qt.SizeAllCursor)
+                        elif self.tool_mode == ToolMode.ROTATE:
+                            self.setCursor(Qt.CrossCursor)
+                        elif self.tool_mode == ToolMode.SCALE:
+                            self.setCursor(Qt.SizeAllCursor)
                         return
 
-            # Hit test for selection
-            hit_obj = self.hit_test(wx, wy)
+            # Priority 3: Scene Objects (Cameras excluded from single-click selection)
+            hit_obj = self.hit_test(wx, wy, allow_camera=False)
             if hit_obj:
                 self.state.select_object(hit_obj.get("id"))
-                return
-            
-            # Pan
-            self.state.select_object(None)
-            self.panning = True
-            self.drag_start = pos
-            self.setCursor(Qt.ClosedHandCursor)
+                self.update()
+            else:
+                # Priority 4: Empty Space -> Clear selection and start panning
+                self.state.select_object(None)
+                self.update()
+                self.grabMouse()
+                self.viewport_state = ViewportState.NAVIGATING
+                self.drag_start = pos
+                self.setCursor(Qt.ClosedHandCursor)
+
+        elif event.button() in (Qt.RightButton, Qt.MiddleButton):
+            # Consume panning only if we are idle or selecting
+            if self.viewport_state in (ViewportState.IDLE, ViewportState.SELECTING):
+                self.grabMouse()
+                self.viewport_state = ViewportState.NAVIGATING
+                self.drag_start = pos
+                self.setCursor(Qt.ClosedHandCursor)
 
     def mouseMoveEvent(self, event):
         pos = event.position()
-        
-        if self.panning:
+        wx, wy = self.screen_to_world(pos.x(), pos.y())
+
+        # 1. Update hovered handle when idle
+        if self.viewport_state == ViewportState.IDLE:
+            old_hover = self.hovered_handle
+            self.hovered_handle = self.HANDLE_NONE
+            if self.state.selected_object_id:
+                obj = self.state.get_selected_object()
+                if obj:
+                    self.hovered_handle = self.hit_handle(wx, wy, obj)
+            if self.hovered_handle != old_hover:
+                self.update()
+
+        # 2. Camera Navigation
+        if self.viewport_state == ViewportState.NAVIGATING:
             delta = pos - self.drag_start
             self.pan_offset += delta
             self.drag_start = pos
             self.update()
             return
 
-        if self.active_handle != self.HANDLE_NONE and self.state.selected_object_id:
+        # 3. Handle Manipulation
+        if self.viewport_state == ViewportState.MANIPULATING and self.state.selected_object_id:
             obj = self.state.get_selected_object()
             if not obj: return
             
-            wx, wy = self.screen_to_world(pos.x(), pos.y())
             transform = obj["components"]["Transform"]
             
-
-            if self.active_handle == self.HANDLE_MOVE:
+            # --- Translate Tool ---
+            if self.tool_mode == ToolMode.TRANSLATE:
                 dx = wx - self.drag_start.x()
                 dy = wy - self.drag_start.y()
                 
-                new_pos_x = self.drag_obj_start_pos[0] + dx
-                new_pos_y = self.drag_obj_start_pos[1] + dy
+                # Check Local Space vs World Space
+                rot_rad = math.radians(transform.get("rotation", 0)) if self.local_space else 0
+                cos_r = math.cos(rot_rad)
+                sin_r = math.sin(rot_rad)
                 
-                # Snapping (Hold Ctrl)
-                if event.modifiers() & Qt.ControlModifier:
-                    snap = self.grid_size
-                    new_pos_x = round(new_pos_x / snap) * snap
-                    new_pos_y = round(new_pos_y / snap) * snap
+                axis_x = (cos_r, sin_r)
+                axis_y = (-sin_r, cos_r)
                 
-                new_pos = [new_pos_x, new_pos_y]
-                
-                # Push Command (will merge with previous move command)
-                cmd = ChangeComponentCommand(obj, "Transform", "position", new_pos)
-                self.state.undo_stack.push(cmd)
-                cmd.redo() # Ensure visual update
-            
-            elif self.active_handle in (self.HANDLE_SCALE_TL, self.HANDLE_SCALE_TR, 
-                                        self.HANDLE_SCALE_BL, self.HANDLE_SCALE_BR):
-                # Distance based uniform scale
-                # Center of object
-                cx, cy = self.drag_obj_start_pos
-                
-                # Distance from center at start
-                dist_start = math.sqrt((self.drag_start.x() - cx)**2 + (self.drag_start.y() - cy)**2)
-                dist_now = math.sqrt((wx - cx)**2 + (wy - cy)**2)
-                
-                if dist_start > 0.001:
-                    factor = dist_now / dist_start
-                    factor = max(0.01, min(100.0, factor))
-                    
-                    # Snapping Scale? Maybe 0.1 increments?
+                if self.active_handle == self.HANDLE_MOVE_ALL:
+                    new_pos_x = self.drag_obj_start_pos[0] + dx
+                    new_pos_y = self.drag_obj_start_pos[1] + dy
                     if event.modifiers() & Qt.ControlModifier:
-                        factor = round(factor * 10) / 10.0
+                        snap = 50.0 # Standard grid size snapping
+                        new_pos_x = round(new_pos_x / snap) * snap
+                        new_pos_y = round(new_pos_y / snap) * snap
+                    transform["position"] = [new_pos_x, new_pos_y]
                     
-                    nsx = self.drag_scale_start[0] * factor
-                    nsy = self.drag_scale_start[1] * factor
+                elif self.active_handle == self.HANDLE_MOVE_X:
+                    dist = dx * axis_x[0] + dy * axis_x[1]
+                    if event.modifiers() & Qt.ControlModifier:
+                        dist = round(dist / 50.0) * 50.0
+                    new_pos_x = self.drag_obj_start_pos[0] + dist * axis_x[0]
+                    new_pos_y = self.drag_obj_start_pos[1] + dist * axis_x[1]
+                    transform["position"] = [new_pos_x, new_pos_y]
                     
-                    nsx = max(0.01, min(1000.0, nsx))
-                    nsy = max(0.01, min(1000.0, nsy))
-                    
-                    cam_data = obj.get("components", {}).get("Camera")
-                    if cam_data:
-                        # Map visual scale factor to Zoom
-                        # Bigger Box = Lower Zoom (Zoom Out)
-                        # Zoom_New = Zoom_Old / factor
-                        if factor > 0.001:
-                            new_zoom = self.drag_zoom_start / factor
-                            new_zoom = max(0.01, min(100.0, new_zoom))
-                            cmd = ChangeComponentCommand(obj, "Camera", "zoom", new_zoom)
-                            self.state.undo_stack.push(cmd)
-                            cmd.redo()
-                    else:
-                        cmd = ChangeComponentCommand(obj, "Transform", "scale", [nsx, nsy])
-                        self.state.undo_stack.push(cmd)
-                        cmd.redo()
+                elif self.active_handle == self.HANDLE_MOVE_Y:
+                    dist = dx * axis_y[0] + dy * axis_y[1]
+                    if event.modifiers() & Qt.ControlModifier:
+                        dist = round(dist / 50.0) * 50.0
+                    new_pos_x = self.drag_obj_start_pos[0] + dist * axis_y[0]
+                    new_pos_y = self.drag_obj_start_pos[1] + dist * axis_y[1]
+                    transform["position"] = [new_pos_x, new_pos_y]
 
-            elif self.active_handle == self.HANDLE_ROTATE:
+            # --- Rotate Tool ---
+            elif self.tool_mode == ToolMode.ROTATE:
                 cx, cy = self.drag_obj_start_pos
                 angle_start = math.atan2(self.drag_start.y() - cy, self.drag_start.x() - cx)
                 angle_now = math.atan2(wy - cy, wx - cx)
                 delta_deg = math.degrees(angle_now - angle_start)
                 
-                raw_rot = (self.drag_rot_start + delta_deg)
-                
-                # Angle Snapping (15 degrees)
+                raw_rot = self.drag_rot_start + delta_deg
                 if event.modifiers() & Qt.ControlModifier:
                     snap_angle = 15.0
                     raw_rot = round(raw_rot / snap_angle) * snap_angle
+                    
+                transform["rotation"] = raw_rot % 360
+
+            # --- Scale Tool ---
+            elif self.tool_mode == ToolMode.SCALE:
+                delta_screen_x = pos.x() - self.drag_screen_start.x()
+                factor = 1.0 + (delta_screen_x / 100.0)
+                factor = max(0.01, min(100.0, factor))
                 
-                new_rot = raw_rot % 360
+                if event.modifiers() & Qt.ControlModifier:
+                    factor = round(factor * 10) / 10.0
+                    factor = max(0.01, factor)
                 
-                cmd = ChangeComponentCommand(obj, "Transform", "rotation", new_rot)
-                self.state.undo_stack.push(cmd)
-                cmd.redo()
+                cam_data = obj.get("components", {}).get("Camera")
+                
+                if self.active_handle == self.HANDLE_SCALE_UNIFORM:
+                    if cam_data:
+                        if factor > 0.001:
+                            new_zoom = self.drag_zoom_start / factor
+                            cam_data["zoom"] = max(0.01, min(100.0, new_zoom))
+                    else:
+                        nsx = self.drag_scale_start[0] * factor
+                        nsy = self.drag_scale_start[1] * factor
+                        transform["scale"] = [nsx, nsy]
+                        
+                elif self.active_handle == self.HANDLE_SCALE_X:
+                    if not cam_data:
+                        nsx = self.drag_scale_start[0] * factor
+                        transform["scale"] = [nsx, self.drag_scale_start[1]]
+                        
+                elif self.active_handle == self.HANDLE_SCALE_Y:
+                    if not cam_data:
+                        nsy = self.drag_scale_start[1] * factor
+                        transform["scale"] = [self.drag_scale_start[0], nsy]
             
+            # Emit scene update to redraw immediately
             self.state.scene_updated.emit()
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            
-            # Note: We handled undo commands via mergeable commands in mouseMoveEvent
-            # So we don't need to push a final command here. 
-            # The 'drag_obj_*' state was just for calculation.
+        # Always release grab when mouse goes up
+        try:
+            self.releaseMouse()
+        except Exception:
             pass
+        
+        if self.viewport_state == ViewportState.NAVIGATING:
+            if event.button() in (Qt.LeftButton, Qt.RightButton, Qt.MiddleButton):
+                self.viewport_state = ViewportState.IDLE
+                self.setCursor(Qt.ArrowCursor)
+                self.update()
+
+        elif self.viewport_state == ViewportState.MANIPULATING:
+            if event.button() == Qt.LeftButton:
+                self.viewport_state = ViewportState.IDLE
+                self.active_handle = self.HANDLE_NONE
+                self.setCursor(Qt.ArrowCursor)
+                
+                # Commit single combined transaction to Undo stack
+                if self.active_command and self.state.selected_object_id:
+                    obj = self.state.get_selected_object()
+                    if obj:
+                        comp_name = self.active_command.comp_name
+                        key = self.active_command.key
+                        final_val = obj["components"][comp_name].get(key)
+                        
+                        # Only push if the value actually changed
+                        if final_val != self.active_command.old_value:
+                            self.active_command.new_value = copy.deepcopy(final_val)
+                            self.state.undo_stack.push(self.active_command)
+                            
+                self.active_command = None
+                self.update()
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            pos = event.position()
+            wx, wy = self.screen_to_world(pos.x(), pos.y())
             
-            self.panning = False
-            self.active_handle = self.HANDLE_NONE
-            self.setCursor(Qt.ArrowCursor)
+            # Double-click selects the camera
+            hit_obj = self.hit_test(wx, wy, allow_camera=True)
+            if hit_obj and "Camera" in hit_obj.get("components", {}):
+                self.state.select_object(hit_obj.get("id"))
+                self.update()
 
     def wheelEvent(self, event):
         delta = event.angleDelta().y()
@@ -708,7 +953,7 @@ class SceneCanvas(QWidget):
         self.pan_offset.setY(self.pan_offset.y() + (new_world[1] - old_world[1]) * self.zoom)
         self.update()
 
-    def hit_test(self, wx, wy):
+    def hit_test(self, wx, wy, allow_camera=False):
         scene = self.state.current_scene
         if not scene: return None
         # Sort by visual order (High Layers on Top)
@@ -717,10 +962,12 @@ class SceneCanvas(QWidget):
         # Sort key: Layer
         def get_layer(o):
             bg = o.get("components", {}).get("Background")
-            if bg: return bg.get("layer", -100)
+            if bg: return bg.get("layer", 1) - 1000
             sr = o.get("components", {}).get("SpriteRenderer")
-            if sr: return sr.get("layer", 0)
-            return 0
+            if sr: return sr.get("layer", 1)
+            tr = o.get("components", {}).get("TextRenderer")
+            if tr: return tr.get("layer", 1)
+            return 1
         
         # Sort Descending (Highest First)
         sorted_objs = sorted(scene.objects, key=get_layer, reverse=True)
@@ -739,14 +986,43 @@ class SceneCanvas(QWidget):
             if dx <= w/2 and dy <= h/2:
                 # If it's a camera, we save it as a low-priority hit
                 if "Camera" in obj.get("components", {}):
-                    camera_hits.append(obj)
+                    if allow_camera:
+                        camera_hits.append(obj)
                     continue
                 return obj
         
         # Only return a camera if nothing else was hit
-        if camera_hits:
+        if allow_camera and camera_hits:
             return camera_hits[0]
         return None
+
+    def cancel_manipulation(self):
+        if not self.state.selected_object_id:
+            return
+        obj = self.state.get_selected_object()
+        if not obj:
+            return
+        
+        # Revert changes to cached start transform
+        transform = obj.get("components", {}).get("Transform", {})
+        if transform:
+            transform["position"] = list(self.drag_obj_start_pos)
+            transform["rotation"] = self.drag_rot_start
+            transform["scale"] = list(self.drag_scale_start)
+            
+        cam = obj.get("components", {}).get("Camera")
+        if cam:
+            cam["zoom"] = self.drag_zoom_start
+            
+        self.viewport_state = ViewportState.IDLE
+        self.active_handle = self.HANDLE_NONE
+        try:
+            self.releaseMouse()
+        except Exception:
+            pass
+        self.setCursor(Qt.ArrowCursor)
+        self.update()
+        self.state.scene_updated.emit()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_R and event.modifiers() == Qt.ControlModifier:
@@ -754,7 +1030,27 @@ class SceneCanvas(QWidget):
             self.pan_offset = QPointF(0, 0)
             self.update()
         elif event.key() == Qt.Key_Escape:
-            self.state.select_object(None)
+            if self.viewport_state == ViewportState.MANIPULATING:
+                self.cancel_manipulation()
+            else:
+                self.state.select_object(None)
+                self.update()
+        elif event.key() == Qt.Key_Q:
+            self.tool_mode = ToolMode.SELECT
+            self.update()
+        elif event.key() == Qt.Key_W:
+            self.tool_mode = ToolMode.TRANSLATE
+            self.update()
+        elif event.key() == Qt.Key_E:
+            self.tool_mode = ToolMode.ROTATE
+            self.update()
+        elif event.key() == Qt.Key_R:
+            self.tool_mode = ToolMode.SCALE
+            self.update()
+        elif event.key() == Qt.Key_G:
+            self.local_space = not self.local_space
+            print(f"Space changed: {'Local' if self.local_space else 'World'}")
+            self.update()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():

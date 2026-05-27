@@ -1,0 +1,147 @@
+{
+  "metadata": {
+    "name": "Untitled Scene",
+    "version": 1
+  },
+  "objects": [
+    {
+      "id": "1307da01-eeec-45e6-b745-031317580401",
+      "name": "Main Camera",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            -279.33657563287187,
+            0.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "Camera": {
+          "width": 1280,
+          "height": 720,
+          "is_main": true
+        }
+      }
+    },
+    {
+      "id": "59d9c88f-fbc1-4140-b21a-5f1388d8f94f",
+      "name": "Light",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            -198.87623381269395,
+            -135.80792997058217
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "LightSource": {
+          "color": [
+            0,
+            186,
+            255,
+            255
+          ],
+          "intensity": 5.0,
+          "radius": 160.0,
+          "type": "point",
+          "cast_shadows": true
+        }
+      }
+    },
+    {
+      "id": "445e7965-7a83-4700-b042-469ee8cab5d5",
+      "name": "Square",
+      "active": true,
+      "parent": "59d9c88f-fbc1-4140-b21a-5f1388d8f94f",
+      "components": {
+        "Transform": {
+          "position": [
+            -195.62538046214303,
+            3.2684665585900436
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.2391860575239197,
+            1.2391860575239197
+          ],
+          "parent_id": null
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "layer": 0,
+          "visible": true,
+          "tint": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            50.0,
+            50.0
+          ],
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "is_trigger": false
+        }
+      }
+    },
+    {
+      "id": "150fbc71-8c11-4adf-8b58-2a1e82329306",
+      "name": "Light",
+      "active": true,
+      "parent": "445e7965-7a83-4700-b042-469ee8cab5d5",
+      "components": {
+        "Transform": {
+          "position": [
+            -311.9962554812349,
+            -1.0778609388679126
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "LightSource": {
+          "color": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "intensity": 5.0,
+          "radius": 200.0,
+          "type": "point"
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

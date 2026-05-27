@@ -1,0 +1,200 @@
+{
+  "metadata": {
+    "name": "Shadow Toggle Demo",
+    "version": 1
+  },
+  "settings": {
+    "background_color": [
+      10,
+      10,
+      10,
+      255
+    ],
+    "ambient_light": [
+      25,
+      25,
+      25,
+      255
+    ]
+  },
+  "prefabs": {},
+  "objects": [
+    {
+      "id": "cam",
+      "name": "Main Camera",
+      "components": {
+        "Transform": {
+          "position": [
+            400.0,
+            300.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "Camera": {
+          "is_main": true,
+          "zoom": 1.0,
+          "width": 800.0,
+          "height": 600.0
+        }
+      }
+    },
+    {
+      "id": "left_block",
+      "name": "Left Block (Casts Shadow)",
+      "components": {
+        "Transform": {
+          "position": [
+            280.0,
+            300.0
+          ],
+          "scale": [
+            0.6,
+            1.5
+          ],
+          "rotation": 0.0
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "visible": true,
+          "tint": [
+            255,
+            100,
+            100,
+            255
+          ],
+          "layer": 0
+        },
+        "BoxCollider": {
+          "size": [
+            100.0,
+            100.0
+          ],
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "is_trigger": false
+        }
+      }
+    },
+    {
+      "id": "right_block",
+      "name": "Right Block (Unshadowed)",
+      "components": {
+        "Transform": {
+          "position": [
+            520.0,
+            300.0
+          ],
+          "scale": [
+            0.6,
+            1.5
+          ],
+          "rotation": 0.0
+        },
+        "SpriteRenderer": {
+          "sprite_path": "",
+          "visible": true,
+          "tint": [
+            100,
+            255,
+            255,
+            255
+          ],
+          "layer": 0
+        },
+        "BoxCollider": {
+          "size": [
+            100.0,
+            100.0
+          ],
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "is_trigger": false
+        }
+      }
+    },
+    {
+      "id": "shadow_light",
+      "name": "Shadow Light",
+      "components": {
+        "Transform": {
+          "position": [
+            160.0,
+            300.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "LightSource": {
+          "color": [
+            255,
+            220,
+            100,
+            255
+          ],
+          "intensity": 1.0,
+          "radius": 250.0,
+          "type": "point",
+          "cast_shadows": true
+        },
+        "Script": {
+          "script_path": "scripts/VerticalHover.py",
+          "properties": {
+            "start_x": 160.0,
+            "start_y": 300.0,
+            "range_y": 150.0,
+            "speed": 1.5
+          }
+        }
+      }
+    },
+    {
+      "id": "no_shadow_light",
+      "name": "No Shadow Light",
+      "components": {
+        "Transform": {
+          "position": [
+            640.0,
+            300.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "rotation": 0.0
+        },
+        "LightSource": {
+          "color": [
+            100,
+            255,
+            100,
+            255
+          ],
+          "intensity": 1.0,
+          "radius": 250.0,
+          "type": "point",
+          "cast_shadows": false
+        },
+        "Script": {
+          "script_path": "scripts/VerticalHover.py",
+          "properties": {
+            "start_x": 640.0,
+            "start_y": 300.0,
+            "range_y": 150.0,
+            "speed": 1.5
+          }
+        }
+      }
+    }
+  ]
+}

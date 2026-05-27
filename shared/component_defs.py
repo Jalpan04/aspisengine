@@ -52,6 +52,7 @@ class LightSource:
     intensity: float = 1.0
     radius: float = 200.0
     type: str = "point" # point, directional, spot
+    cast_shadows: bool = True
 
 @dataclass
 class Script:
@@ -69,6 +70,13 @@ class Background:
     layer: int = -100
 
 @dataclass
+class TextRenderer:
+    text: str = "Text"
+    font_size: float = 24.0
+    color: List[int] = field(default_factory=lambda: [255, 255, 255, 255])
+    layer: int = 100
+
+@dataclass
 class Camera:
     width: float = 800.0
     height: float = 600.0
@@ -84,4 +92,6 @@ COMPONENT_MAP = {
     "LightSource": LightSource,
     COMPONENT_SCRIPT: Script,
     "Camera": Camera,
+    "Background": Background,
+    "TextRenderer": TextRenderer,
 }

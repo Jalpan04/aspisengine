@@ -1,9 +1,10 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QDialog, QLabel, 
+    QWidget, QVBoxLayout, QHBoxLayout, QDialog, QLabel,
     QLineEdit, QPushButton, QFrame, QSizePolicy
 )
 from PySide6.QtCore import Qt, Signal, QPoint
 from PySide6.QtGui import QColor, QPainter, QLinearGradient, QPen
+from editor.theme import Theme
 
 class CP_SVBox(QWidget):
     colorChanged = Signal(float, float)
@@ -184,41 +185,8 @@ class ModernColorPicker(QDialog):
         self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.setFixedSize(360, 240) # Compact size
         
-        # Style matches app.py
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #1a1a1a;
-                border: 1px solid #333;
-            }
-            QLabel {
-                color: #b0b0b0;
-                font-family: 'Segoe UI', sans-serif;
-                font-size: 11px;
-                background: transparent;
-            }
-            QLineEdit {
-                background-color: #252525;
-                color: #e0e0e0;
-                border: 1px solid #333;
-                padding: 4px;
-                font-family: monospace;
-            }
-            QLineEdit:focus {
-                border: 1px solid #555;
-            }
-            QPushButton {
-                background-color: #2a2a2a;
-                color: #b0b0b0;
-                border: 1px solid #333;
-                padding: 4px 12px;
-            }
-            QPushButton:hover {
-                background-color: #333;
-            }
-            QPushButton:pressed {
-                background-color: #222;
-            }
-        """)
+        # Use the global theme so the picker always matches the main app
+        self.setStyleSheet(Theme.get_global_stylesheet())
         
         self.initial_color = initial_color
         self.color = initial_color

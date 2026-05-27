@@ -264,69 +264,12 @@ class HierarchyPanel(QWidget):
             # Helper to get defaults
             defaults = {
                 "Camera": {"width": 1280, "height": 720, "zoom": 1.0, "is_main": False},
-                "LightSource": {"color": [255, 255, 255, 255], "intensity": 1.0, "radius": 200.0, "type": "point"},
-                "CircleCollider": {"radius": 25.0, "offset": [0.0, 0.0], "is_trigger": False},
-                "SpriteRenderer": {"sprite_path": "", "layer": 0, "visible": True, "tint": [255, 255, 255, 255]},
-                "BoxCollider": {"size": [50.0, 50.0], "offset": [0.0, 0.0], "is_trigger": False},
-                "Background": {"sprite_path": "", "color": [255, 255, 255, 255], "loop_x": False, "loop_y": False, "scroll_speed": [0.0, 0.0], "fixed": True, "layer": -100}
-            }
-        obj_id = item.data(0, Qt.UserRole)
-        scene = self.state.current_scene
-        
-        # Command now handles finding indices and recursion
-        cmd = DeleteObjectCommand(scene, obj_id)
-        self.state.undo_stack.push(cmd)
-        cmd.redo()
-        self.window().refresh_ui()
-
-    def save_prefab(self, item):
-        obj_id = item.data(0, Qt.UserRole)
-        obj = self.state.get_object_by_id(obj_id)
-        if not obj:
-            return
-            
-        from PySide6.QtWidgets import QFileDialog, QMessageBox
-        import json
-        import os
-        
-        # Default filename = object name
-        safe_name = "".join(c for c in obj.get("name", "prefab") if c.isalnum() or c in (' ', '_', '-')).strip()
-        
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Save Prefab",
-            os.path.join(self.state.project_root, "assets", f"{safe_name}.prefab"),
-            "Prefab Files (*.prefab)"
-        )
-        
-        if path:
-            print(f"Attempting to save prefab to: {path}")
-            try:
-                with open(path, 'w') as f:
-                    json.dump(obj, f, indent=2)
-                print(f"Saved prefab to {path}")
-                
-                # Notify asset browser to refresh
-                self.state.scene_loaded.emit() 
-                
-            except Exception as e:
-                print(f"Error saving prefab: {e}")
-                QMessageBox.critical(self, "Error", f"Failed to save prefab:\n{e}")
-
-    def add_new_object(self, name="New Object", components=None):
-        scene = self.state.current_scene
-        if not scene:
-            return
-        
-        new_obj = GameObject.create(name)
-        if components:
-            from shared.component_defs import Camera, LightSource, CircleCollider, SpriteRenderer, BoxCollider, COMPONENT_MAP
-            # Helper to get defaults
-            defaults = {
-                "Camera": {"width": 1280, "height": 720, "zoom": 1.0, "is_main": False},
-                "LightSource": {"color": [255, 255, 255, 255], "intensity": 1.0, "radius": 200.0, "type": "point"},
-                "CircleCollider": {"radius": 25.0, "offset": [0.0, 0.0], "is_trigger": False},
-                "SpriteRenderer": {"sprite_path": "", "layer": 0, "visible": True, "tint": [255, 255, 255, 255]},
-                "BoxCollider": {"size": [50.0, 50.0], "offset": [0.0, 0.0], "is_trigger": False}
+                "LightSource": {"color": [255, 255, 255, 255], "intensity": 1.0, "radius": 200.0, "type": "point", "cast_shadows": True},
+                "CircleCollider": {"radius": 25.0, "offset": [0.0, 0.0], "is_trigger": False, "category_bitmask": 1, "collision_mask": 4294967295},
+                "SpriteRenderer": {"sprite_path": "", "layer": 1, "visible": True, "tint": [255, 255, 255, 255]},
+                "BoxCollider": {"size": [50.0, 50.0], "offset": [0.0, 0.0], "is_trigger": False, "category_bitmask": 1, "collision_mask": 4294967295},
+                "Background": {"sprite_path": "", "color": [255, 255, 255, 255], "loop_x": False, "loop_y": False, "scroll_speed": [0.0, 0.0], "fixed": True, "layer": 1},
+                "TextRenderer": {"text": "New Text", "font_size": 24.0, "color": [255, 255, 255, 255], "layer": 1}
             }
             
             for comp_name, comp_data in components.items():

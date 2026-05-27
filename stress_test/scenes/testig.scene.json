@@ -1,0 +1,110 @@
+{
+  "metadata": {
+    "name": "Untitled Scene",
+    "version": 1
+  },
+  "objects": [
+    {
+      "id": "082e6fc3-4a29-4abf-ae37-7982b2fb8e3e",
+      "name": "Main Camera",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "Camera": {
+          "width": 1280,
+          "height": 720,
+          "is_main": true
+        }
+      }
+    },
+    {
+      "id": "b76c5c42-c4d2-4614-99d1-062a0b40e4ee",
+      "name": "Text",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "TextRenderer": {
+          "text": "testttt",
+          "font_size": 24,
+          "color": [
+            255,
+            255,
+            255,
+            255
+          ],
+          "layer": 100
+        }
+      }
+    },
+    {
+      "id": "9b1b6e7d-cefe-4c3c-9b14-1acbaafcdc90",
+      "name": "Background",
+      "active": true,
+      "parent": "b76c5c42-c4d2-4614-99d1-062a0b40e4ee",
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "Background": {
+          "sprite_path": "",
+          "color": [
+            17,
+            161,
+            18,
+            255
+          ],
+          "loop_x": false,
+          "loop_y": false,
+          "scroll_speed": [
+            0.0,
+            0.0
+          ],
+          "fixed": true,
+          "layer": -100
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      20,
+      20,
+      255
+    ]
+  }
+}

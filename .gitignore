@@ -12,3 +12,14 @@ venv/
 *.png
 *.scene.json.backup
 *.prefab.backup
+
+# Build and distribution directories
+build/
+dist/
+*.spec
+
+# Local workspace/agent files
+.agent/
+.pytest_cache/
+.mypy_cache/
+.history/

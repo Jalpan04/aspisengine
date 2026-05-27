@@ -1,0 +1,31 @@
+{
+  "id": "orbiting_light",
+  "name": "Orbiting Light",
+  "components": {
+    "Transform": {
+      "position": [
+        400.0,
+        300.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0
+    },
+    "LightSource": {
+      "color": [
+        255,
+        220,
+        150,
+        255
+      ],
+      "intensity": 5000.0,
+      "radius": 220.0,
+      "type": "point"
+    },
+    "Script": {
+      "script_path": "scripts/LightOrbit.py"
+    }
+  }
+}

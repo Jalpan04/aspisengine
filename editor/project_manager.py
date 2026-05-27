@@ -41,8 +41,9 @@ class ProjectIcon(QWidget):
         font.setStyleStrategy(QFont.PreferAntialias)
         painter.setFont(font)
         
-        # Draw Text Centered
-        painter.drawText(rect, Qt.AlignCenter, self.letter)
+        # Draw Text Centered (nudge up by 4px to align baseline visually)
+        text_rect = rect.adjusted(0, -4, 0, -4)
+        painter.drawText(text_rect, Qt.AlignCenter, self.letter)
 
 # --- Custom Widget for Project List Item ---
 class ProjectItemWidget(QWidget):
@@ -54,7 +55,7 @@ class ProjectItemWidget(QWidget):
         self.name = os.path.basename(path)
         
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(12)
         
         # 1. Icon (Custom Painted Widget)
@@ -68,6 +69,7 @@ class ProjectItemWidget(QWidget):
         
         self.name_lbl = QLabel(self.name)
         self.name_lbl.setObjectName("ProjectName")
+        self.name_lbl.setMinimumHeight(18) # Prevent clipping of font descenders
         
         self.path_lbl = QLabel(path)
         self.path_lbl.setObjectName("ProjectPath")
@@ -184,15 +186,15 @@ class ProjectManager(QDialog):
         
         sidebar_layout.addStretch()
         
-        # 3. Footer Links
+        # 3. Footer Links (Improved text color contrast)
         links_layout = QVBoxLayout()
         links_layout.setSpacing(10)
         
-        doc_link = QLabel('<a href="https://docs.aspisengine.com" style="color: #888; text-decoration: none;">Documentation</a>')
+        doc_link = QLabel('<a href="https://docs.aspisengine.com" style="color: #A0A0A0; text-decoration: none;">Documentation</a>')
         doc_link.setOpenExternalLinks(True)
         doc_link.setObjectName("FooterLink")
         
-        settings_link = QLabel('<a href="#" style="color: #888; text-decoration: none;">Settings</a>')
+        settings_link = QLabel('<a href="#" style="color: #A0A0A0; text-decoration: none;">Settings</a>')
         settings_link.setObjectName("FooterLink")
         
         copyright_lbl = QLabel("© 2026 Aspis Team")
@@ -243,7 +245,7 @@ class ProjectManager(QDialog):
         self.refresh_recent_list()
         
         content_layout.addWidget(self.recent_list)
-
+        
         main_layout.addWidget(content_area, 70)
 
     def apply_theme(self):
@@ -280,15 +282,16 @@ class ProjectManager(QDialog):
             }
             QLabel#FooterLink {
                 font-size: 13px;
-                color: #888;
+                color: #A0A0A0;
             }
             QLabel#FooterLink:hover {
-                color: #E0E0E0;
+                color: #FFFFFF;
             }
             QLabel#Copyright {
-                color: #444; 
+                color: #777777; 
                 font-size: 10px;
             }
+
             
             /* Buttons */
             QPushButton {

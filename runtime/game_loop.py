@@ -23,6 +23,213 @@ from shared.scene_loader import load_scene
 from runtime.api import GameObject, Script, Input, Time
 from runtime.physics import PhysicsSystem
 
+# --- Radial Gradient Light Generator & Cache for high performance ---
+_master_light_surface = None
+_light_surface_cache = {}
+
+def get_master_light_surface():
+    global _master_light_surface
+    if _master_light_surface is None:
+        RES = 512
+        HALF = RES // 2
+        _master_light_surface = pygame.Surface((RES, RES), pygame.SRCALPHA)
+        for x in range(RES):
+            for y in range(RES):
+                dx = x - HALF
+                dy = y - HALF
+                dist = math.sqrt(dx*dx + dy*dy)
+                if dist <= HALF:
+                    t = dist / float(HALF)
+                    val = 1.0 - t * t
+                    factor = val * val
+                    alpha = int(255 * factor)
+                    color_val = int(255 * factor)
+                    _master_light_surface.set_at((x, y), (color_val, color_val, color_val, alpha))
+    return _master_light_surface
+
+def get_light_source_surface(radius, color, intensity):
+    radius = max(1, min(2000, int(radius)))
+    color_tuple = tuple(color[:3])
+    # Quantize intensity to 2 decimal places to limit cache size
+    # and avoid scaling lag on dynamic lights while keeping transitions silky smooth
+    q_intensity = max(0.0, round(float(intensity), 2))
+    key = (radius, color_tuple, q_intensity)
+    
+    if key not in _light_surface_cache:
+        master = get_master_light_surface()
+        size = int(radius * 2)
+        scaled = pygame.transform.smoothscale(master, (size, size))
+        
+        # 1. Create a fully tinted light base (full RGB strength)
+        tinted = pygame.Surface((size, size), pygame.SRCALPHA)
+        tinted.fill(color_tuple + (255,))
+        
+        # 2. Multiply with the radial gradient to apply shape
+        tinted.blit(scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        
+        # 3. Apply intensity (allows values > 1.0 to expand core, and values < 1.0 to dim it)
+        if q_intensity != 1.0:
+            boosted = pygame.Surface((size, size), pygame.SRCALPHA)
+            full_passes = int(q_intensity)
+            fraction = q_intensity - full_passes
+            
+            # Add full intensity layers
+            for _ in range(full_passes):
+                boosted.blit(tinted, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+                
+            # Add fractional intensity layer if needed
+            if fraction > 0.0:
+                frac_surf = tinted.copy()
+                f_val = int(255 * fraction)
+                frac_surf.fill((f_val, f_val, f_val, f_val), special_flags=pygame.BLEND_RGBA_MULT)
+                boosted.blit(frac_surf, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+                
+            tinted = boosted
+            
+        _light_surface_cache[key] = tinted
+        
+    return _light_surface_cache[key]
+
+
+# --- 2D Dynamic Shadow Casting & Raycast Visibility Polygons ---
+def get_ray_intersection(p, d, a, b):
+    # p is start of ray (px, py)
+    # d is direction vector (dx, dy)
+    # a, b are endpoints of segment
+    ax, ay = a
+    bx, by = b
+    px, py = p
+    dx, dy = d
+    
+    denominator = dy * (bx - ax) - dx * (by - ay)
+    if abs(denominator) < 1e-6:
+        return None # Parallel
+        
+    t = ((ay - py) * (bx - ax) - (ax - px) * (by - ay)) / denominator
+    u = (dx * (ay - py) - dy * (ax - px)) / denominator
+    
+    if t >= 0 and 0.0 <= u <= 1.0:
+        return t
+    return None
+
+def extract_segments(objects, light_pos, light_radius, ignore_obj=None):
+    segments = []
+    
+    lx, ly = light_pos
+    r = light_radius + 50 # Buffer
+    
+    # Large boundary box around the light coordinates to bound all rays
+    segments.append(((lx - r, ly - r), (lx + r, ly - r)))
+    segments.append(((lx + r, ly - r), (lx + r, ly + r)))
+    segments.append(((lx + r, ly + r), (lx - r, ly + r)))
+    segments.append(((lx - r, ly + r), (lx - r, ly - r)))
+    
+    for go in objects:
+        if go == ignore_obj:
+            continue
+            
+        # Spatial culling (broad phase distance check) using world position
+        wpos = go.world_position
+        dist = math.sqrt((wpos[0] - lx)**2 + (wpos[1] - ly)**2)
+        if dist > light_radius + 300:
+            continue
+            
+        pos = wpos
+        rot = go.world_rotation
+        scale = go.world_scale
+        
+        # 1. BoxCollider
+        box = go.components.get("BoxCollider")
+        if box:
+            size = box.get("size", [50.0, 50.0])
+            offset = box.get("offset", [0.0, 0.0])
+            
+            width = size[0] * abs(scale[0])
+            height = size[1] * abs(scale[1])
+            ox = offset[0] * scale[0]
+            oy = offset[1] * scale[1]
+            
+            l, r_side = ox - width/2, ox + width/2
+            t, b = oy - height/2, oy + height/2
+            
+            local_verts = [(l, t), (r_side, t), (r_side, b), (l, b)]
+            world_verts = []
+            
+            for lx_i, ly_i in local_verts:
+                rad = math.radians(rot)
+                rx = lx_i * math.cos(rad) - ly_i * math.sin(rad)
+                ry = lx_i * math.sin(rad) + ly_i * math.cos(rad)
+                world_verts.append((pos[0] + rx, pos[1] + ry))
+                
+            for i in range(4):
+                segments.append((world_verts[i], world_verts[(i + 1) % 4]))
+                
+        # 2. CircleCollider (approximated as regular octagon)
+        circle = go.components.get("CircleCollider")
+        if circle:
+            radius = circle.get("radius", 25.0)
+            offset = circle.get("offset", [0.0, 0.0])
+            
+            max_scale = max(abs(scale[0]), abs(scale[1]))
+            final_radius = radius * max_scale
+            ox = offset[0] * scale[0]
+            oy = offset[1] * scale[1]
+            
+            world_verts = []
+            for angle_deg in range(0, 360, 45):
+                angle_rad = math.radians(angle_deg)
+                lx_i = ox + final_radius * math.cos(angle_rad)
+                ly_i = oy + final_radius * math.sin(angle_rad)
+                
+                rad = math.radians(rot)
+                rx = lx_i * math.cos(rad) - ly_i * math.sin(rad)
+                ry = lx_i * math.sin(rad) + ly_i * math.cos(rad)
+                world_verts.append((pos[0] + rx, pos[1] + ry))
+                
+            for i in range(8):
+                segments.append((world_verts[i], world_verts[(i + 1) % 8]))
+                
+    return segments
+
+def compute_visibility_polygon(light_pos, radius, segments):
+    px, py = light_pos
+    
+    vertices = set()
+    for a, b in segments:
+        vertices.add(a)
+        vertices.add(b)
+        
+    angles = set()
+    for vx, vy in vertices:
+        angle = math.atan2(vy - py, vx - px)
+        angles.add(angle)
+        angles.add(angle - 0.0001)
+        angles.add(angle + 0.0001)
+        
+    for angle_deg in range(0, 360, 90):
+        angles.add(math.radians(angle_deg))
+        
+    intersection_points = []
+    
+    for angle in angles:
+        dx = math.cos(angle)
+        dy = math.sin(angle)
+        
+        closest_t = radius # Default to radius boundary
+        
+        for a, b in segments:
+            t = get_ray_intersection(light_pos, (dx, dy), a, b)
+            if t is not None and t < closest_t:
+                closest_t = t
+                
+        ix = px + closest_t * dx
+        iy = py + closest_t * dy
+        intersection_points.append((ix, iy))
+        
+    # Sort clockwise
+    intersection_points.sort(key=lambda pt: math.atan2(pt[1] - py, pt[0] - px))
+    return intersection_points
+
 class GameRuntime:
     def __init__(self, scene_path, width=800, height=600):
         pygame.init()
@@ -384,6 +591,9 @@ class GameRuntime:
                 if "TextRenderer" in comps:
                     go.components["TextRenderer"] = comps["TextRenderer"]
 
+                if "LightSource" in comps:
+                    go.components["LightSource"] = comps["LightSource"]
+
                 self.objects.append(go)
 
             # 2nd Pass: Link Hierarchy
@@ -451,18 +661,12 @@ class GameRuntime:
                 camera_comp = cam
                 break
         
-        
         # Default settings if no camera
         screen_w, screen_h = 800, 600
         cam_x, cam_y = 0.0, 0.0
 
-        
         # Scene Settings (Background)
         bg_color = (20, 20, 20)
-        # We need access to scene settings. The load_scene function returns a dict, but we parsed it into objects.
-        # Ideally, we should store the scene_data or settings on the class.
-        # Hack: Parse it from scene file again or store it in load_level?
-        # Better: GameRuntime should have self.scene_settings
         if hasattr(self, "scene_settings"):
             bg_color = tuple(self.scene_settings.get("background_color", [20, 20, 20])[:3])
             
@@ -476,35 +680,56 @@ class GameRuntime:
         if current_w != screen_w or current_h != screen_h:
             self.screen = pygame.display.set_mode((screen_w, screen_h))
             
-        self.screen.fill(bg_color) 
+        # Collect active light sources
+        light_sources = []
+        for go in self.objects:
+            light = go.components.get("LightSource")
+            if light:
+                light_sources.append((go, light))
+                
+        has_lighting = len(light_sources) > 0 or (hasattr(self, "scene_settings") and "ambient_light" in self.scene_settings)
         
-        # World -> Screen: (WorldPos - CamPos) * Zoom + ScreenCenter
+        # Surfaces
+        world_surface = pygame.Surface((screen_w, screen_h))
+        world_surface.fill(bg_color)
+        
+        fg_surface = pygame.Surface((screen_w, screen_h), pygame.SRCALPHA)
+        fg_surface.fill((0, 0, 0, 0))
+        
+        ambient_color = [30, 30, 30, 255]
+        if hasattr(self, "scene_settings"):
+            ambient_color = self.scene_settings.get("ambient_light", [30, 30, 30, 255])
+        
         center_x = screen_w / 2
         center_y = screen_h / 2
         
-        # Sort objects by Layer (Z-Index)
         def get_layer(obj):
             bg = obj.components.get("Background")
-            if bg: return bg.get("layer", -100)
+            if bg: return bg.get("layer", 1) - 1000
             sr = obj.components.get("SpriteRenderer")
-            if sr: return sr.get("layer", 0)
+            if sr: return sr.get("layer", 1)
             tr = obj.components.get("TextRenderer")
-            if tr: return tr.get("layer", 100) # Text defaults to top (100) to overlay sprites
-            return 0
+            if tr: return tr.get("layer", 1)
+            return 1
             
         sorted_objects = sorted(self.objects, key=get_layer)
         
+        bg_objects = []
+        fg_objects = []
         for go in sorted_objects:
-            # Common Transform Calculation
+            if get_layer(go) < 0 or "Background" in go.components:
+                bg_objects.append(go)
+            else:
+                fg_objects.append(go)
+
+        # -----------------------------------------------------
+        # PHASE A: Draw Background (Floor)
+        # -----------------------------------------------------
+        for go in bg_objects:
             pos = go.world_position
             rot = go.world_rotation 
             scale = go.world_scale
-
-            # Screen X = (ObjX - CamX) + CenterX
-            screen_x = (pos[0] - cam_x) + center_x
-            screen_y = (pos[1] - cam_y) + center_y
             
-            # --- 0. Background Component ---
             bg_data = go.components.get("Background")
             if bg_data:
                 path = bg_data.get("sprite_path")
@@ -515,76 +740,61 @@ class GameRuntime:
                 img = None
 
                 if is_fixed:
-                    # fixed mode: Fill the screen
-                    # render at (0, 0) with size (screen_w, screen_h)
                     target_rect = pygame.Rect(0, 0, screen_w, screen_h)
                 else:
-                    # World Space (Standard) - Use Transform
-                    # Scale based on 100x100 base size if no sprite, or sprite size
-                    base_w, base_h = 100, 100 # Default size
-                    
+                    base_w, base_h = 100, 100 
                     if path and path in self.sprites:
                         base_w, base_h = self.sprites[path].get_size()
-                    
                     w = base_w * scale[0]
                     h = base_h * scale[1]
-                    
                     screen_x = (pos[0] - cam_x) + center_x
                     screen_y = (pos[1] - cam_y) + center_y
-                    
                     target_rect = pygame.Rect(0, 0, int(w), int(h))
                     target_rect.center = (screen_x, screen_y)
 
-                # Fetch Image or Create Surface
                 if path and path in self.sprites:
                     img = self.sprites[path]
-                    # Scale image to target rect
                     if img.get_size() != target_rect.size:
                         img = pygame.transform.scale(img, target_rect.size)
-                    
-                    # Apply Rotation (only if not fixed? or allow rotating full screen bg?)
-                    # Usually fixed background implies no rotation, but let's respect Transform if meaningful.
-                    # For "Full Screen", rotation usually implies "Screen Shake" or similar, which applies to camera.
-                    # If fixed, we probably shouldn't rotate unless local rotation is set.
-                    # But rotating a full-screen quad reveals corners.
-                    # Let's SKIP rotation for Fixed Backgrounds to ensure coverage.
                     if not is_fixed and rot != 0:
                          img = pygame.transform.rotate(img, -rot)
-                         # Rotation changes bounds, re-center
                          new_rect = img.get_rect(center=target_rect.center)
                          target_rect = new_rect
-
-                    # Tint
                     if color[:3] != [255, 255, 255]:
                         img = img.copy()
                         img.fill(color[:3], special_flags=pygame.BLEND_MULT)
-                        
-                    self.screen.blit(img, target_rect)
-                    
+                    world_surface.blit(img, target_rect)
                 else:
-                     # Color Fill
                      if is_fixed:
-                         # Direct fill for performance
-                         self.screen.fill(color[:3]) # Supports alpha? Fill usually ignores alpha on main surf?
-                         # Main screen has no alpha. RGB only.
-                         # If we want transparent background over... nothing? 
-                         # Just fill.
+                         world_surface.fill(color[:3])
                      else:
                          surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
                          surf.fill(color)
                          if rot != 0:
                              surf = pygame.transform.rotate(surf, -rot)
                              target_rect = surf.get_rect(center=target_rect.center)
-                         self.screen.blit(surf, target_rect)
+                         world_surface.blit(surf, target_rect)
+        
+        # -----------------------------------------------------
+        # PHASE B: Draw Foreground Objects to fg_surface
+        # -----------------------------------------------------
+        for go in fg_objects:
+            pos = go.world_position
+            rot = go.world_rotation 
+            scale = go.world_scale
             
-            # --- 1. Draw Sprite (if exists and visible) ---
+            screen_x = (pos[0] - cam_x) + center_x
+            screen_y = (pos[1] - cam_y) + center_y
+
             sprite_data = go.components.get("SpriteRenderer")
             if sprite_data and sprite_data.get("visible", True):
                 path = sprite_data.get("sprite_path")
+                # Skip the fallback box if this object is a light source
+                if not path and "LightSource" in go.components:
+                    continue
                 img = None
                 
                 if not path:
-                     # Fallback to procedural shape
                     if "CircleCollider" in go.components:
                         img = pygame.Surface((100, 100), pygame.SRCALPHA)
                         pygame.draw.circle(img, (255, 255, 255), (50, 50), 50)
@@ -595,66 +805,139 @@ class GameRuntime:
                     img = self.sprites[path]
                 
                 if img:
-                    rot = go.world_rotation
-                    base_scale = go.world_scale
-                    
-                    # Apply Scale
-                    scale_x = base_scale[0]
-                    scale_y = base_scale[1]
-                    
-                    # Tint
+                    scale_x, scale_y = scale[0], scale[1]
                     tint = sprite_data.get("tint", [255, 255, 255, 255])
+                    
                     if tint != [255, 255, 255, 255]:
                         img = img.copy()
-                        if tint[0] != 255 or tint[1] != 255 or tint[2] != 255:
+                        if tint[:3] != [255, 255, 255]:
                             img.fill((tint[0], tint[1], tint[2], 255), special_flags=pygame.BLEND_RGBA_MULT)
-                        if tint[3] != 255:
+                        if len(tint) > 3 and tint[3] != 255:
                             img.set_alpha(tint[3])
                     
-                    # Flip
                     if scale_x < 0: 
-                        img = pygame.transform.flip(img, True, False)
-                        scale_x = abs(scale_x)
+                         img = pygame.transform.flip(img, True, False)
+                         scale_x = abs(scale_x)
                     if scale_y < 0:
-                        img = pygame.transform.flip(img, False, True)
-                        scale_y = abs(scale_y)
+                         img = pygame.transform.flip(img, False, True)
+                         scale_y = abs(scale_y)
                     
-                    # Scale (Base size)
                     target_w = max(1, int(img.get_width() * scale_x))
                     target_h = max(1, int(img.get_height() * scale_y))
                     
-                    if target_w < 10000 and target_h < 10000 and target_w > 0 and target_h > 0:
+                    if 0 < target_w < 10000 and 0 < target_h < 10000:
                         try:
                             img = pygame.transform.scale(img, (target_w, target_h))
                             if rot != 0:
                                 img = pygame.transform.rotate(img, -rot)
                             rect = img.get_rect(center=(screen_x, screen_y))
-                            self.screen.blit(img, rect)
+                            fg_surface.blit(img, rect)
                         except:
                             pass
             
-            # 2. Draw Text (TextRenderer)
             text_data = go.components.get("TextRenderer")
             if text_data:
                 text_content = text_data.get("text", "Text")
-                base_font_size = int(text_data.get("font_size", 24))
+                font_size = int(text_data.get("font_size", 24))
+                color = tuple(text_data.get("color", [255, 255, 255])[:3])
                 
-                # Font Size
-                scaled_font_size = int(base_font_size)
-                
-                color_list = text_data.get("color", [255, 255, 255])
-                color = tuple(color_list[:3])
-                
-                if scaled_font_size > 0:
+                if font_size > 0:
                     if not hasattr(self, "_font_cache"): self._font_cache = {}
-                    if scaled_font_size not in self._font_cache:
-                        self._font_cache[scaled_font_size] = pygame.font.SysFont("Arial", scaled_font_size)
+                    if font_size not in self._font_cache:
+                        self._font_cache[font_size] = pygame.font.SysFont("Arial", font_size)
                     
-                    font = self._font_cache[scaled_font_size]
+                    font = self._font_cache[font_size]
                     surf = font.render(text_content, True, color)
                     rect = surf.get_rect(center=(screen_x, screen_y))
-                    self.screen.blit(surf, rect)
+                    fg_surface.blit(surf, rect)
 
+        # -----------------------------------------------------
+        # PHASE C: Calculate Lighting and Apply
+        # -----------------------------------------------------
+        if has_lighting:
+            bg_light_map = pygame.Surface((screen_w, screen_h))
+            bg_light_map.fill(tuple(ambient_color[:3]))
+            
+            fg_light_map = pygame.Surface((screen_w, screen_h))
+            fg_light_map.fill(tuple(ambient_color[:3]))
+            
+            for go, light in light_sources:
+                color = light.get("color", [255, 255, 255, 255])
+                if len(color) < 4: color = list(color) + [255]
+                intensity = light.get("intensity", 1.0)
+                radius = light.get("radius", 200.0)
+                cast_shadows = light.get("cast_shadows", True)
+                
+                pos = go.world_position
+                
+                # --- CAMERA OFF-SCREEN SPATIAL CULLING ---
+                # Check if the light's bounding volume intersects the camera's viewport bounds.
+                # If completely off-screen, skip heavy raycasting and blit operations completely.
+                cam_half_w = screen_w / 2
+                cam_half_h = screen_h / 2
+                view_min_x = cam_x - cam_half_w
+                view_max_x = cam_x + cam_half_w
+                view_min_y = cam_y - cam_half_h
+                view_max_y = cam_y + cam_half_h
+                
+                if (pos[0] + radius < view_min_x or pos[0] - radius > view_max_x or
+                    pos[1] + radius < view_min_y or pos[1] - radius > view_max_y):
+                    continue
+                
+                light_surf = get_light_source_surface(radius, color, intensity)
+                
+                screen_x = (pos[0] - cam_x) + center_x
+                screen_y = (pos[1] - cam_y) + center_y
+                light_rect = light_surf.get_rect(center=(int(screen_x), int(screen_y)))
+                
+                # Foreground objects receive pure lighting gradients (No shadows)
+                fg_light_map.blit(light_surf, light_rect, special_flags=pygame.BLEND_RGBA_ADD)
+                
+                # Background floor receives lighting WITH shadows
+                if cast_shadows:
+                    segments = extract_segments(self.objects, pos, radius, ignore_obj=go)
+                    world_poly = compute_visibility_polygon(pos, radius, segments)
+                    
+                    local_poly = []
+                    for wx, wy in world_poly:
+                        lx = (wx - pos[0]) + radius
+                        ly = (wy - pos[1]) + radius
+                        local_poly.append((lx, ly))
+                        
+                    if len(local_poly) >= 3:
+                        shadowed_light = light_surf.copy()
+                        size = int(radius * 2)
+                        mask_surf = pygame.Surface((size, size), pygame.SRCALPHA)
+                        mask_surf.fill((0, 0, 0, 0))
+                        
+                        pygame.draw.polygon(mask_surf, (255, 255, 255, 255), local_poly)
+                        
+                        blur_radius = max(3, int(radius * 0.06))
+                        try:
+                            # Use box_blur (much faster than gaussian_blur), apply 2 passes for pseudo-gaussian smoothness
+                            mask_surf = pygame.transform.box_blur(mask_surf, blur_radius)
+                            mask_surf = pygame.transform.box_blur(mask_surf, blur_radius)
+                        except AttributeError:
+                            # Fallback for older pygame
+                            small_mask = pygame.transform.smoothscale(mask_surf, (size // 4, size // 4))
+                            mask_surf = pygame.transform.smoothscale(small_mask, (size, size))
+                        
+                        shadowed_light.blit(mask_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+                        bg_light_map.blit(shadowed_light, light_rect, special_flags=pygame.BLEND_RGBA_ADD)
+                else:
+                    bg_light_map.blit(light_surf, light_rect, special_flags=pygame.BLEND_RGBA_ADD)
+                
+            # Apply background lighting multiplicatively (preserves floor colors, shades smoothly)
+            world_surface.blit(bg_light_map, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            
+            # Apply foreground lighting multiplicatively (preserves sprite colors, shades smoothly)
+            fg_surface.blit(fg_light_map, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        
+        # -----------------------------------------------------
+        # PHASE D: Output
+        # -----------------------------------------------------
+        world_surface.blit(fg_surface, (0, 0))
+        self.screen.blit(world_surface, (0, 0))
         pygame.display.flip()
 
 def run(scene_path):
