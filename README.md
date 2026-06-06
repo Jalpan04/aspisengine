@@ -73,3 +73,7 @@ If you prefer to run from source or contribute to the engine:
 
 ---
 *Open Source (MIT). Powered by Python, PySide6, and Pygame.*
+
+## License
+
+This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) file for details.
