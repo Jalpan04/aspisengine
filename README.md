@@ -1,5 +1,7 @@
 # Aspis Engine
 
+![GitHub top language](https://img.shields.io/github/languages/top/Jalpan04/aspisengine) ![GitHub repo size](https://img.shields.io/github/repo-size/Jalpan04/aspisengine) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
 <img src="logo.png" alt="Aspis Engine logo" width="33%">
 
 **The Lightweight Python Game Engine**
