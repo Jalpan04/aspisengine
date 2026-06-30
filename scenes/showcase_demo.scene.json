@@ -1,0 +1,423 @@
+{
+  "metadata": {
+    "name": "Aspis Dungeon Platformer Showcase",
+    "version": 1
+  },
+  "objects": [
+    {
+      "id": "cam-id-1111",
+      "name": "Main Camera",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "Camera": {
+          "width": 1280,
+          "height": 720,
+          "is_main": true
+        },
+        "Script": {
+          "script_path": "CameraFollow",
+          "properties": {
+            "target_name": "Knight Player",
+            "smooth_speed": 5.0,
+            "offset_x": 0.0,
+            "offset_y": -60.0
+          }
+        }
+      }
+    },
+    {
+      "id": "manager-id-0001",
+      "name": "Game Manager",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "Script": {
+          "script_path": "AutoRestart",
+          "properties": {
+            "target_name": "Knight Player",
+            "scene_path": "scenes/showcase_demo.scene.json",
+            "fall_threshold": 700.0,
+            "restart_delay": 1.2
+          }
+        }
+      }
+    },
+    {
+      "id": "bg-id-2222",
+      "name": "Background",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "Background": {
+          "sprite_path": "",
+          "color": [
+            28,
+            22,
+            42,
+            255
+          ],
+          "loop_x": false,
+          "loop_y": false,
+          "scroll_speed": [
+            0.0,
+            0.0
+          ],
+          "fixed": true,
+          "layer": -1000
+        }
+      }
+    },
+    {
+      "id": "text-id-3333",
+      "name": "Instructions",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            -295.0
+          ],
+          "rotation": 0.0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "parent_id": null
+        },
+        "TextRenderer": {
+          "text": "A / D  to Run   |   W or Space  to Jump   |   Push the Crates!",
+          "font_size": 22,
+          "color": [
+            200,
+            185,
+            230,
+            255
+          ],
+          "layer": 10
+        }
+      }
+    },
+    {
+      "id": "floor-id-4444",
+      "name": "Dungeon Floor",
+      "prefab": "prefabs/platform.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            340.0
+          ]
+        },
+        "SpriteRenderer": {
+          "tint": [
+            65,
+            58,
+            88,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            2400.0,
+            60.0
+          ]
+        }
+      }
+    },
+    {
+      "id": "wall-left-id-5555",
+      "name": "Left Wall",
+      "prefab": "prefabs/platform.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            -680.0,
+            0.0
+          ]
+        },
+        "SpriteRenderer": {
+          "tint": [
+            50,
+            44,
+            68,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            40.0,
+            800.0
+          ]
+        }
+      }
+    },
+    {
+      "id": "wall-right-id-6666",
+      "name": "Right Wall",
+      "prefab": "prefabs/platform.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            680.0,
+            0.0
+          ]
+        },
+        "SpriteRenderer": {
+          "tint": [
+            50,
+            44,
+            68,
+            255
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            40.0,
+            800.0
+          ]
+        }
+      }
+    },
+    {
+      "id": "plat-1-id-7777",
+      "name": "Left Platform",
+      "prefab": "prefabs/platform.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            -250.0,
+            190.0
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            450.0,
+            30.0
+          ]
+        }
+      }
+    },
+    {
+      "id": "plat-2-id-8888",
+      "name": "Right Platform",
+      "prefab": "prefabs/platform.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            250.0,
+            40.0
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            450.0,
+            30.0
+          ]
+        }
+      }
+    },
+    {
+      "id": "plat-3-id-9999",
+      "name": "Top Platform",
+      "prefab": "prefabs/platform.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            500.0,
+            -100.0
+          ]
+        },
+        "BoxCollider": {
+          "size": [
+            320.0,
+            30.0
+          ]
+        }
+      }
+    },
+    {
+      "id": "campfire-id-0000",
+      "name": "Campfire Torch",
+      "prefab": "prefabs/torch.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            0.0,
+            290.0
+          ]
+        },
+        "LightSource": {
+          "color": [
+            255,
+            140,
+            40,
+            255
+          ],
+          "radius": 750.0,
+          "intensity": 2.5
+        }
+      }
+    },
+    {
+      "id": "torch-right-id-9010",
+      "name": "Right Torch",
+      "prefab": "prefabs/torch.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            520.0,
+            -140.0
+          ]
+        }
+      }
+    },
+    {
+      "id": "crate-1-id-1010",
+      "name": "Crate A",
+      "prefab": "prefabs/crate.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            -160.0,
+            110.0
+          ]
+        }
+      }
+    },
+    {
+      "id": "crate-2-id-2020",
+      "name": "Crate B",
+      "prefab": "prefabs/crate.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            200.0,
+            -30.0
+          ]
+        }
+      }
+    },
+    {
+      "id": "crate-3-id-3030",
+      "name": "Crate C",
+      "prefab": "prefabs/crate.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            200.0,
+            -100.0
+          ]
+        }
+      }
+    },
+    {
+      "id": "crate-4-id-4040",
+      "name": "Crate D",
+      "prefab": "prefabs/crate.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            500.0,
+            -170.0
+          ]
+        }
+      }
+    },
+    {
+      "id": "knight-id-6789",
+      "name": "Knight Player",
+      "prefab": "prefabs/player.json",
+      "active": true,
+      "parent": null,
+      "components": {
+        "Transform": {
+          "position": [
+            -350.0,
+            100.0
+          ],
+          "scale": [
+            4.0,
+            4.0
+          ]
+        }
+      }
+    }
+  ],
+  "prefabs": {},
+  "settings": {
+    "background_color": [
+      20,
+      18,
+      28,
+      255
+    ],
+    "ambient_light": [
+      75,
+      65,
+      95,
+      255
+    ]
+  }
+}
