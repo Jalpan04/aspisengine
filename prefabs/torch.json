@@ -1,0 +1,12 @@
+{
+  "name": "Light Torch",
+  "components": {
+    "LightSource": {
+      "type": "point",
+      "color": [255, 150, 50, 255],
+      "radius": 420.0,
+      "intensity": 2.0,
+      "cast_shadows": true
+    }
+  }
+}

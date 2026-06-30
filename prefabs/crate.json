@@ -1,0 +1,24 @@
+{
+  "name": "Physics Crate",
+  "components": {
+    "SpriteRenderer": {
+      "sprite_path": "",
+      "layer": 3,
+      "visible": true,
+      "tint": [160, 105, 50, 255]
+    },
+    "RigidBody": {
+      "mass": 2.0,
+      "use_gravity": true,
+      "friction": 0.7,
+      "restitution": 0.05,
+      "velocity": [0.0, 0.0],
+      "fixed_rotation": true
+    },
+    "BoxCollider": {
+      "size": [55.0, 55.0],
+      "offset": [0.0, 0.0],
+      "is_trigger": false
+    }
+  }
+}

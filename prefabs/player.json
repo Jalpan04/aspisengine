@@ -1,0 +1,77 @@
+{
+  "name": "Knight Player",
+  "components": {
+    "SpriteRenderer": {
+      "sprite_path": "",
+      "layer": 5,
+      "visible": true,
+      "tint": [255, 255, 255, 255]
+    },
+    "Animator": {
+      "sprite_sheet": "assets/knight.png",
+      "frame_width": 32,
+      "frame_height": 32,
+      "current_state": "idle",
+      "animations": {
+        "idle": {
+          "name": "idle",
+          "frames": [0, 1, 2, 3],
+          "frame_rate": 6.0,
+          "loop": true
+        },
+        "run": {
+          "name": "run",
+          "frames": [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
+          "frame_rate": 14.0,
+          "loop": true
+        }
+      },
+      "parameters": {
+        "speed": {
+          "type": "float",
+          "value": 0.0
+        }
+      },
+      "transitions": [
+        {
+          "from_state": "idle",
+          "to_state": "run",
+          "conditions": [
+            {"parameter": "speed", "operator": "greater", "value": 0.5}
+          ]
+        },
+        {
+          "from_state": "run",
+          "to_state": "idle",
+          "conditions": [
+            {"parameter": "speed", "operator": "less", "value": 0.5}
+          ]
+        }
+      ],
+      "playing": false
+    },
+    "Script": {
+      "script_path": "SideScrollPlayer"
+    },
+    "RigidBody": {
+      "mass": 1.0,
+      "use_gravity": true,
+      "friction": 0.5,
+      "restitution": 0.0,
+      "velocity": [0.0, 0.0],
+      "fixed_rotation": true
+    },
+    "BoxCollider": {
+      "size": [28.0, 54.0],
+      "offset": [0.0, 0.0],
+      "is_trigger": false
+    },
+    "LightSource": {
+      "type": "point",
+      "color": [255, 230, 170, 255],
+      "radius": 280.0,
+      "intensity": 1.5,
+      "cast_shadows": false
+    }
+  }
+}
