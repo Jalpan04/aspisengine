@@ -65,16 +65,22 @@ If you prefer to run from source or contribute to the engine:
 4. **Run a Scene Directly**:
 
    ```bash
-   python main.py --run-scene stress_test/scenes/02_interaction.scene.json
+   python run_demo.py
+   ```
+
+   Or run a custom scene:
+
+   ```bash
+   python run_demo.py scenes/animation_demo.scene.json
    ```
 
 ## Documentation & Demos
 
-* **Stress Tests**: Check the `stress_test/scenes/` folder for comprehensive examples of engine features (physics, hierarchy, text, etc.).
+* **Demos**: Check the `scenes/` folder for demo scenes (`knight_demo.scene.json` and `animation_demo.scene.json`).
 * **Source Code**: The codebase is modular and documented, serving as the primary reference for advanced users.
 
 ---
-*Open Source (MIT). Powered by Python, PySide6, and Pygame.*
+*Open Source (GPL-3.0). Powered by Python, PySide6, and Pygame.*
 
 ## License
 
