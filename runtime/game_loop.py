@@ -23,6 +23,115 @@ from shared.scene_loader import load_scene
 from runtime.api import GameObject, Script, Input, Time
 from runtime.physics import PhysicsSystem
 
+# --- Native Engine-Prebaked Scripts ---
+class CameraFollow(Script):
+    target_name = "Player"
+    smooth_speed = 5.0
+    offset_x = 0.0
+    offset_y = 0.0
+
+    def start(self):
+        self.target = self.find_object(self.target_name)
+
+    def update(self, dt):
+        if not self.target:
+            self.target = self.find_object(self.target_name)
+            if not self.target:
+                return
+
+        cx, cy = self.game_object.position
+        tx, ty = self.target.world_position
+        tx += self.offset_x
+        ty += self.offset_y
+
+        dx = tx - cx
+        dy = ty - cy
+
+        if abs(dx) > 0.1 or abs(dy) > 0.1:
+            self.game_object.position[0] += dx * self.smooth_speed * dt
+            self.game_object.position[1] += dy * self.smooth_speed * dt
+
+
+class AutoRestart(Script):
+    target_name = "Knight Player"
+    scene_path = "scenes/showcase_demo.scene.json"
+    fall_threshold = 700.0
+    restart_delay = 1.5
+
+    def start(self):
+        self._timer = 0.0
+        self._restarting = False
+        self._target = None
+
+    def update(self, dt):
+        if not self._target:
+            self._target = self.find_object(self.target_name)
+            if not self._target:
+                return
+
+        py = self._target.world_position[1]
+
+        if not self._restarting and py > self.fall_threshold:
+            self._restarting = True
+            self._timer = 0.0
+
+        if self._restarting:
+            self._timer += dt
+            if self._timer >= self.restart_delay:
+                self.load_scene(self.scene_path)
+
+
+class SideScrollPlayer(Script):
+    jump_force = -420.0
+    move_speed = 220.0
+
+    def start(self):
+        self.set_anim_parameter("speed", 0.0)
+
+    def update(self, dt):
+        rb = self.game_object.components.get("RigidBody")
+        if not rb:
+            return
+
+        current_vel = rb.get("velocity", [0.0, 0.0])
+        vx = current_vel[0]
+        vy = current_vel[1]
+
+        target_vx = 0.0
+        moving = False
+        if Input.get_key(pygame.K_a):
+            target_vx = -self.move_speed
+            moving = True
+            if self.transform.scale[0] > 0:
+                self.transform.scale[0] = -self.transform.scale[0]
+        elif Input.get_key(pygame.K_d):
+            target_vx = self.move_speed
+            moving = True
+            if self.transform.scale[0] < 0:
+                self.transform.scale[0] = -self.transform.scale[0]
+
+        vx = target_vx
+
+        if (Input.get_key(pygame.K_w) or Input.get_key(pygame.K_SPACE)) and abs(vy) < 8.0:
+            vy = self.jump_force
+
+        rb["velocity"] = [vx, vy]
+        self.set_anim_parameter("speed", 1.0 if moving else 0.0)
+
+
+NATIVE_SCRIPTS = {
+    "camerafollow": CameraFollow,
+    "camera_follow": CameraFollow,
+    "scripts/camera_follow.py": CameraFollow,
+    "autorestart": AutoRestart,
+    "auto_restart": AutoRestart,
+    "scripts/autorestart.py": AutoRestart,
+    "sidescrollplayer": SideScrollPlayer,
+    "side_scroll_player": SideScrollPlayer,
+    "scripts/sidescrollplayer.py": SideScrollPlayer,
+}
+
+
 # --- Radial Gradient Light Generator & Cache for high performance ---
 _master_light_surface = None
 _light_surface_cache = {}
@@ -253,6 +362,12 @@ class GameRuntime:
         # Audio
         pygame.mixer.init()
         
+        # Joysticks / Gamepads
+        pygame.joystick.init()
+        self.joysticks = [pygame.joystick.Joystick(i) for i in range(pygame.joystick.get_count())]
+        for joyst in self.joysticks:
+            joyst.init()
+        
         self.load_level()
         self.start_scripts()
 
@@ -280,6 +395,13 @@ class GameRuntime:
                     return obj
             return None
 
+        def find_objs_with_tag(tag):
+            matches = []
+            for obj in self.objects:
+                if obj.tag == tag:
+                    matches.append(obj)
+            return matches
+
         def play_anim(name):
             anim_data = script_instance.game_object.components.get("Animator")
             if anim_data:
@@ -303,6 +425,7 @@ class GameRuntime:
         script_instance.load_scene = load
         script_instance.play_sound = play_snd
         script_instance.find_object = find_obj
+        script_instance.find_objects_with_tag = find_objs_with_tag
         script_instance.play_animation = play_anim
         script_instance.set_anim_parameter = set_param
         script_instance.get_anim_parameter = get_param
@@ -422,14 +545,15 @@ class GameRuntime:
             transform = comps["Transform"]
             scale = transform.get("scale", [1, 1])
             
-            go = GameObject(data["id"], data.get("name", "Clone"), list(pos), rot, scale)
+            go = GameObject(data["id"], data.get("name", "Clone"), list(pos), rot, scale, tag=data.get("tag", ""))
             
             # Components
-            if "SpriteRenderer" in comps: go.components["SpriteRenderer"] = comps["SpriteRenderer"].copy()
-            if "Script" in comps: go.components["Script"] = comps["Script"].copy()
-            if "RigidBody" in comps: go.components["RigidBody"] = comps["RigidBody"].copy()
-            if "BoxCollider" in comps: go.components["BoxCollider"] = comps["BoxCollider"].copy()
-            if "CircleCollider" in comps: go.components["CircleCollider"] = comps["CircleCollider"].copy()
+            for comp_name, comp_data in comps.items():
+                if comp_name != "Transform":
+                    if isinstance(comp_data, dict):
+                        go.components[comp_name] = comp_data.copy()
+                    else:
+                        go.components[comp_name] = comp_data
             
             self.objects.append(go)
             
@@ -597,6 +721,37 @@ class GameRuntime:
     def load_script(self, script_path, game_object):
         """Dynamically load a script file and instantiate its Script class."""
         try:
+            # Check native prebaked scripts first
+            norm_key = script_path.replace("\\", "/").lower()
+            cls = None
+            for key, native_cls in NATIVE_SCRIPTS.items():
+                if key.lower() == norm_key or os.path.splitext(os.path.basename(key))[0].lower() == os.path.splitext(os.path.basename(script_path))[0].lower():
+                    cls = native_cls
+                    break
+            
+            if cls:
+                instance = cls()
+                instance.game_object = game_object
+                instance.transform = game_object # Alias for convenience
+                
+                # Inject properties from Inspector
+                if "Script" in game_object.components:
+                    props = game_object.components["Script"].get("properties", {})
+                    for key, value in props.items():
+                        setattr(instance, key, value)
+                        
+                self.active_scripts.append(instance)
+                
+                # Call Awake() immediately
+                if hasattr(instance, "awake"):
+                    try:
+                        instance.awake()
+                    except Exception as e:
+                        print(f"Error in Awake() of {cls.__name__}: {e}")
+                
+                print(f"Attached native script {cls.__name__} to {game_object.name}")
+                return
+
             full_path = os.path.join(PROJECT_ROOT, script_path)
             if not os.path.exists(full_path):
                 print(f"Script file not found: {full_path}")
@@ -645,6 +800,32 @@ class GameRuntime:
             
             # Sort objects for rendering order
             raw_objects = data.get("objects", [])
+            
+            # 0. Load and merge prefabs
+            for obj_data in raw_objects:
+                prefab_path = obj_data.get("prefab")
+                if prefab_path:
+                    full_prefab_path = os.path.join(PROJECT_ROOT, prefab_path)
+                    if os.path.exists(full_prefab_path):
+                        try:
+                            with open(full_prefab_path, 'r') as pf:
+                                prefab_data = json.load(pf)
+                            prefab_comps = prefab_data.get("components", {})
+                            if "components" not in obj_data:
+                                obj_data["components"] = {}
+                            
+                            # Deep copy/merge prefab components into object components
+                            for comp_name, comp_val in prefab_comps.items():
+                                if comp_name not in obj_data["components"]:
+                                    obj_data["components"][comp_name] = json.loads(json.dumps(comp_val))
+                                else:
+                                    # Override specific fields in existing component
+                                    for prop_name, prop_val in comp_val.items():
+                                        if prop_name not in obj_data["components"][comp_name]:
+                                            obj_data["components"][comp_name][prop_name] = prop_val
+                        except Exception as pe:
+                            print(f"Error loading prefab {prefab_path}: {pe}")
+                            
             raw_objects.sort(key=lambda o: 
                 o.get("components", {}).get("SpriteRenderer", {}).get("layer", 0))
             
@@ -663,7 +844,8 @@ class GameRuntime:
                 go = GameObject(
                     obj_data["id"], 
                     obj_data["name"], 
-                    pos, rot, scale
+                    pos, rot, scale,
+                    tag=obj_data.get("tag", "")
                 )
                 
                 # Load Sprite
@@ -766,6 +948,7 @@ class GameRuntime:
         except Exception as e:
             print(f"Failed to load scene: {e}")
             self.running = False
+            raise e
 
     def start_scripts(self):
         for script in self.active_scripts:
@@ -787,22 +970,44 @@ class GameRuntime:
 
 
     def handle_events(self):
-        # Reset per-frame input
-        
+        # 1. Save previous frame key state for edge detection
+        if hasattr(Input, "_keys") and Input._keys:
+            Input._previous_keys = list(Input._keys)
+        else:
+            Input._previous_keys = [False] * 512
+
+        # Save previous frame mouse state
+        Input._previous_mouse_buttons = tuple(Input._mouse_buttons) if hasattr(Input, "_mouse_buttons") else (False, False, False)
+
+        # Save previous frame gamepad buttons state
+        Input._previous_gamepad_buttons = dict(Input._gamepad_buttons)
+
+        # 2. Process Pygame Event Queue
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
         
-        # Update Input state
+        # 3. Update current Input states
         keys = pygame.key.get_pressed()
-        Input._keys = keys
+        Input._keys = [bool(keys[i]) for i in range(min(512, len(keys)))]
 
-    def update_scripts(self, dt):
-        for script in self.active_scripts:
-            try:
-                script.update(dt)
-            except Exception as e:
-                print(f"Error in Update() of {script}: {e}")
+        Input._mouse_buttons = pygame.mouse.get_pressed()
+        Input._mouse_position = pygame.mouse.get_pos()
+
+        # Poll gamepads / joysticks
+        if hasattr(self, "joysticks"):
+            for i, joyst in enumerate(self.joysticks):
+                try:
+                    num_buttons = joyst.get_numbuttons()
+                    for b in range(num_buttons):
+                        Input._gamepad_buttons[(i, b)] = bool(joyst.get_button(b))
+                    
+                    num_axes = joyst.get_numaxes()
+                    for a in range(num_axes):
+                        Input._gamepad_axes[(i, a)] = float(joyst.get_axis(a))
+                except pygame.error:
+                    pass
+
 
     def draw(self):
         # 1. Find Main Camera
@@ -989,8 +1194,18 @@ class GameRuntime:
                         
                     if not path:
                         if "CircleCollider" in go.components:
-                            img = pygame.Surface((100, 100), pygame.SRCALPHA)
-                            pygame.draw.circle(img, (255, 255, 255), (50, 50), 50)
+                            circ = go.components["CircleCollider"]
+                            r_px = int(circ.get("radius", 25.0))
+                            diam = max(1, r_px * 2)
+                            img = pygame.Surface((diam, diam), pygame.SRCALPHA)
+                            pygame.draw.circle(img, (255, 255, 255), (r_px, r_px), r_px)
+                        elif "BoxCollider" in go.components:
+                            box = go.components["BoxCollider"]
+                            bsize = box.get("size", [100.0, 100.0])
+                            bw = max(1, int(bsize[0]))
+                            bh = max(1, int(bsize[1]))
+                            img = pygame.Surface((bw, bh), pygame.SRCALPHA)
+                            img.fill((255, 255, 255))
                         else:
                             img = pygame.Surface((100, 100), pygame.SRCALPHA)
                             img.fill((255, 255, 255))
@@ -1012,12 +1227,14 @@ class GameRuntime:
                         if len(tint) > 3 and tint[3] != 255:
                             img.set_alpha(tint[3])
                     
-                    if scale_x < 0: 
-                         img = pygame.transform.flip(img, True, False)
-                         scale_x = abs(scale_x)
-                    if scale_y < 0:
-                         img = pygame.transform.flip(img, False, True)
-                         scale_y = abs(scale_y)
+                    # Horizontal flip only - negative X scale flips the sprite
+                    # Vertical axis is never flipped by scale; doing so would
+                    # invert the sprite. Instead, only flip on X.
+                    flip_x = scale_x < 0
+                    scale_x = abs(scale_x)
+                    scale_y = abs(scale_y)  # Always positive to avoid vertical inversion
+                    if flip_x:
+                        img = pygame.transform.flip(img, True, False)
                     
                     target_w = max(1, int(img.get_width() * scale_x))
                     target_h = max(1, int(img.get_height() * scale_y))
@@ -1082,6 +1299,33 @@ class GameRuntime:
                     continue
                 
                 light_surf = get_light_source_surface(radius, color, intensity)
+                
+                type_str = light.get("type", "point").lower()
+                if type_str in ["spot", "cone"]:
+                    # Create a conical mask matching the object's heading
+                    size = int(radius * 2)
+                    mask = pygame.Surface((size, size), pygame.SRCALPHA)
+                    mask.fill((0, 0, 0, 0))
+                    
+                    center = (radius, radius)
+                    poly_points = [center]
+                    
+                    cone_angle = 60.0 # 60 degree field of view for the spot light
+                    half_cone = cone_angle / 2.0
+                    heading = go.world_rotation
+                    
+                    steps = 16
+                    for step in range(steps + 1):
+                        theta = heading - half_cone + (step * (cone_angle / steps))
+                        rad = math.radians(theta)
+                        px = radius + radius * math.cos(rad) * 1.5
+                        py = radius + radius * math.sin(rad) * 1.5
+                        poly_points.append((px, py))
+                        
+                    pygame.draw.polygon(mask, (255, 255, 255, 255), poly_points)
+                    
+                    light_surf = light_surf.copy()
+                    light_surf.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
                 
                 screen_x = (pos[0] - cam_x) + center_x
                 screen_y = (pos[1] - cam_y) + center_y
