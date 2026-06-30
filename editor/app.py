@@ -181,6 +181,10 @@ class MainWindow(QMainWindow):
         # Scene Menu
         scene_menu = menu_bar.addMenu("Scene")
         scene_menu.addAction("Settings").triggered.connect(self.show_scene_settings)
+        
+        # Top-level Export Action (placed next to Scene)
+        export_action = menu_bar.addAction("Export")
+        export_action.triggered.connect(self.export_game)
 
     def show_scene_settings(self):
         scene = self.state.current_scene
@@ -377,6 +381,19 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.warning(self, "Warning", "Please save the scene before playing.")
             self.save_scene()
+
+    def export_game(self):
+        if self.state.current_scene_path:
+            self._do_save(self.state.current_scene_path)
+        else:
+            QMessageBox.warning(self, "Warning", "Please save the scene before exporting.")
+            self.save_scene()
+            if not self.state.current_scene_path:
+                return # Cancelled save
+
+        from editor.export_dialog import ExportDialog
+        dialog = ExportDialog(self, self.state.project_root, self.state.current_scene_path)
+        dialog.exec()
 
     def apply_theme(self):
         self.setStyleSheet(Theme.get_global_stylesheet())
