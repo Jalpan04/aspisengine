@@ -3,23 +3,104 @@ import pygame
 
 class Input:
     """Static helper for input."""
-    _keys = {}
+    _keys = [False] * 512
+    _previous_keys = [False] * 512
     
+    _mouse_buttons = (False, False, False)
+    _previous_mouse_buttons = (False, False, False)
+    _mouse_position = (0, 0)
+    
+    _gamepad_buttons = {}
+    _previous_gamepad_buttons = {}
+    _gamepad_axes = {}
+
     @staticmethod
     def get_key(key_code):
         try:
-            return Input._keys[key_code]
+            return bool(Input._keys[key_code])
+        except (IndexError, TypeError, KeyError):
+            return False
+
+    @staticmethod
+    def get_key_down(key_code):
+        try:
+            return bool(Input._keys[key_code]) and not bool(Input._previous_keys[key_code])
+        except (IndexError, TypeError, KeyError):
+            return False
+
+    @staticmethod
+    def get_key_up(key_code):
+        try:
+            return not bool(Input._keys[key_code]) and bool(Input._previous_keys[key_code])
+        except (IndexError, TypeError, KeyError):
+            return False
+
+    @staticmethod
+    def get_mouse_position():
+        return Input._mouse_position
+
+    @staticmethod
+    def get_mouse_button(button_idx):
+        try:
+            return bool(Input._mouse_buttons[button_idx])
         except (IndexError, TypeError):
             return False
+
+    @staticmethod
+    def get_mouse_button_down(button_idx):
+        try:
+            return bool(Input._mouse_buttons[button_idx]) and not bool(Input._previous_mouse_buttons[button_idx])
+        except (IndexError, TypeError):
+            return False
+
+    @staticmethod
+    def get_mouse_button_up(button_idx):
+        try:
+            return not bool(Input._mouse_buttons[button_idx]) and bool(Input._previous_mouse_buttons[button_idx])
+        except (IndexError, TypeError):
+            return False
+
+    @staticmethod
+    def get_button(button_idx, gamepad_id=0):
+        try:
+            return bool(Input._gamepad_buttons.get((gamepad_id, button_idx), False))
+        except (TypeError, KeyError):
+            return False
+
+    @staticmethod
+    def get_button_down(button_idx, gamepad_id=0):
+        try:
+            curr = Input._gamepad_buttons.get((gamepad_id, button_idx), False)
+            prev = Input._previous_gamepad_buttons.get((gamepad_id, button_idx), False)
+            return bool(curr) and not bool(prev)
+        except (TypeError, KeyError):
+            return False
+
+    @staticmethod
+    def get_button_up(button_idx, gamepad_id=0):
+        try:
+            curr = Input._gamepad_buttons.get((gamepad_id, button_idx), False)
+            prev = Input._previous_gamepad_buttons.get((gamepad_id, button_idx), False)
+            return not bool(curr) and bool(prev)
+        except (TypeError, KeyError):
+            return False
+
+    @staticmethod
+    def get_axis(axis_idx, gamepad_id=0):
+        try:
+            return float(Input._gamepad_axes.get((gamepad_id, axis_idx), 0.0))
+        except (TypeError, KeyError):
+            return 0.0
 
 class Time:
     """Static helper for time."""
     dt = 0.0
 
 class GameObject:
-    def __init__(self, id, name, position, rotation, scale):
+    def __init__(self, id, name, position, rotation, scale, tag=""):
         self.id = id
         self.name = name
+        self.tag = tag
         self.position = list(position)
         self.rotation = rotation
         self.scale = list(scale)
@@ -113,6 +194,11 @@ class Script:
         """Finds a GameObject by name."""
         # API hook
         return None
+
+    def find_objects_with_tag(self, tag):
+        """Finds all GameObjects with the given tag."""
+        # API hook
+        return []
 
     def play_animation(self, state_name):
         """Plays the specified animation state directly."""

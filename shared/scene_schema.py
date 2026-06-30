@@ -9,6 +9,7 @@ class GameObject:
     name: str
     active: bool = True
     parent: Optional[str] = None
+    tag: str = ""
     components: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -21,6 +22,7 @@ class GameObject:
             id=obj_id,
             name=name,
             parent=None,
+            tag="",
             components={"Transform": asdict(transform)}
         )
 
