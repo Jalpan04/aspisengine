@@ -291,7 +291,12 @@ class PhysicsSystem:
                 if body.body_type == pymunk.Body.DYNAMIC:
                     obj.position[0] = body.position.x
                     obj.position[1] = body.position.y
-                    obj.rotation = math.degrees(body.angle) # Radians -> Degrees
+                    # Only sync rotation if the body can rotate (moment != inf).
+                    # Fixed-rotation bodies keep obj.rotation at 0 to avoid float drift.
+                    if body.moment != float("inf"):
+                        obj.rotation = math.degrees(body.angle)  # Radians -> Degrees
+                    else:
+                        obj.rotation = 0.0
                     
                     # Update Component Velocity (Physics -> Script)
                     if COMPONENT_RIGIDBODY in obj.components:
