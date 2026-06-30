@@ -1,0 +1,39 @@
+{
+  "name": "Snake Body Segment",
+  "components": {
+    "Transform": {
+      "position": [
+        0,
+        0
+      ],
+      "rotation": 0.0,
+      "scale": [
+        0.35,
+        0.35
+      ]
+    },
+    "SpriteRenderer": {
+      "sprite_path": "",
+      "layer": 4,
+      "visible": true,
+      "tint": [
+        50,
+        220,
+        50,
+        255
+      ]
+    },
+    "LightSource": {
+      "color": [
+        50,
+        220,
+        50,
+        255
+      ],
+      "intensity": 0.8,
+      "radius": 80.0,
+      "type": "point",
+      "cast_shadows": false
+    }
+  }
+}
